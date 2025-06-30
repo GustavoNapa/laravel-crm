@@ -2202,6 +2202,53 @@ return [
                     ],
                 ],
             ],
+
+            'whatsapp' => [
+                'title' => 'WhatsApp & AI Agents',
+                'info'  => 'WhatsApp Evolution API and AI Agents configuration.',
+
+                'evolution-api' => [
+                    'title'                => 'Evolution API',
+                    'info'                 => 'Configure Evolution API integration for WhatsApp.',
+                    'enable'               => 'Enable Evolution API',
+                    'base-url'             => 'API Base URL',
+                    'base-url-info'        => 'Base URL of your Evolution API installation (e.g.: https://api.evolutionapi.com)',
+                    'token'                => 'Authentication Token',
+                    'token-info'           => 'Evolution API authentication token for secure access.',
+                    'instance-name'        => 'Instance Name',
+                    'instance-name-info'   => 'Unique WhatsApp instance name in Evolution API.',
+                ],
+
+                'ai-agents' => [
+                    'title'                     => 'AI Agents',
+                    'info'                      => 'Configure AI service integrations for agents.',
+                    'openai-api-key'            => 'OpenAI API Key',
+                    'openai-api-key-info'       => 'OpenAI API key for intelligent agent conversations.',
+                    'openai-model'              => 'OpenAI Model',
+                    'elevenlabs-api-key'        => 'ElevenLabs API Key',
+                    'elevenlabs-api-key-info'   => 'ElevenLabs API key for agent voice synthesis.',
+                ],
+
+                'message-settings' => [
+                    'title'                        => 'Message Settings',
+                    'info'                         => 'Configure message sending parameters and timing.',
+                    'message-delay'                => 'Message Delay (seconds)',
+                    'message-delay-info'           => 'Wait time between message sends to avoid blocking.',
+                    'followup-interval'            => 'Follow-up Interval (hours)',
+                    'followup-interval-info'       => 'Time between automatic follow-up attempts.',
+                    'max-followup-attempts'        => 'Max Follow-up Attempts',
+                    'max-followup-attempts-info'   => 'Maximum number of automatic follow-up attempts per lead.',
+                ],
+
+                'business-hours' => [
+                    'title'               => 'Business Hours',
+                    'info'                => 'Configure hours for automatic message sending.',
+                    'start-hour'          => 'Start Hour',
+                    'start-hour-info'     => 'Business start hour (0-23).',
+                    'end-hour'            => 'End Hour',
+                    'end-hour-info'       => 'Business end hour (0-23).',
+                ],
+            ],
         ],
     ],
 

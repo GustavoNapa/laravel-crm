@@ -26,6 +26,8 @@ Route::group(['middleware' => ['user']], function () {
          */
         Route::prefix('whatsapp')->group(function () {
             Route::get('', [QuarkionsController::class, 'whatsappIndex'])->name('admin.quarkions.whatsapp.index');
+            Route::get('configuration', [QuarkionsController::class, 'whatsappConfiguration'])->name('admin.quarkions.whatsapp.configuration');
+            Route::get('test-connection', [QuarkionsController::class, 'whatsappTestConnection'])->name('admin.quarkions.whatsapp.test-connection');
             Route::get('chat/{leadId}', [QuarkionsController::class, 'whatsappChat'])->name('admin.quarkions.whatsapp.chat');
             Route::post('send-message', [QuarkionsController::class, 'whatsappSendMessage'])->name('admin.quarkions.whatsapp.send');
             Route::get('qrcode', [QuarkionsController::class, 'whatsappQrCode'])->name('admin.quarkions.whatsapp.qrcode');

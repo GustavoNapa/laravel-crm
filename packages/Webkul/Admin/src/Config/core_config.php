@@ -310,5 +310,142 @@ return [
                 'default' => config('imap.accounts.default.password'),
             ],
         ],
+    ], [
+        'key'  => 'general.whatsapp',
+        'name' => 'admin::app.configuration.index.whatsapp.title',
+        'info' => 'admin::app.configuration.index.whatsapp.info',
+        'icon' => 'icon-setting',
+        'sort' => 4,
+    ], [
+        'key'    => 'general.whatsapp.evolution_api',
+        'name'   => 'admin::app.configuration.index.whatsapp.evolution-api.title',
+        'info'   => 'admin::app.configuration.index.whatsapp.evolution-api.info',
+        'sort'   => 1,
+        'fields' => [
+            [
+                'name'          => 'enable',
+                'title'         => 'admin::app.configuration.index.whatsapp.evolution-api.enable',
+                'type'          => 'boolean',
+                'default'       => true,
+            ], [
+                'name'          => 'base_url',
+                'title'         => 'admin::app.configuration.index.whatsapp.evolution-api.base-url',
+                'type'          => 'text',
+                'default'       => config('whatsapp.evolution_base_url'),
+                'validation'    => 'required_if:enable,1|url',
+                'depends'       => 'enable:1',
+                'info'          => 'admin::app.configuration.index.whatsapp.evolution-api.base-url-info',
+            ], [
+                'name'          => 'token',
+                'title'         => 'admin::app.configuration.index.whatsapp.evolution-api.token',
+                'type'          => 'password',
+                'default'       => config('whatsapp.evolution_token'),
+                'validation'    => 'required_if:enable,1',
+                'depends'       => 'enable:1',
+                'info'          => 'admin::app.configuration.index.whatsapp.evolution-api.token-info',
+            ], [
+                'name'          => 'instance_name',
+                'title'         => 'admin::app.configuration.index.whatsapp.evolution-api.instance-name',
+                'type'          => 'text',
+                'default'       => config('whatsapp.instance_name'),
+                'validation'    => 'required_if:enable,1',
+                'depends'       => 'enable:1',
+                'info'          => 'admin::app.configuration.index.whatsapp.evolution-api.instance-name-info',
+            ],
+        ],
+    ], [
+        'key'    => 'general.whatsapp.ai_agents',
+        'name'   => 'admin::app.configuration.index.whatsapp.ai-agents.title',
+        'info'   => 'admin::app.configuration.index.whatsapp.ai-agents.info',
+        'sort'   => 2,
+        'fields' => [
+            [
+                'name'          => 'openai_api_key',
+                'title'         => 'admin::app.configuration.index.whatsapp.ai-agents.openai-api-key',
+                'type'          => 'password',
+                'default'       => config('whatsapp.openai_api_key'),
+                'info'          => 'admin::app.configuration.index.whatsapp.ai-agents.openai-api-key-info',
+            ], [
+                'name'          => 'openai_model',
+                'title'         => 'admin::app.configuration.index.whatsapp.ai-agents.openai-model',
+                'type'          => 'select',
+                'default'       => config('whatsapp.openai_model'),
+                'options'       => [
+                    [
+                        'title' => 'GPT-3.5 Turbo',
+                        'value' => 'gpt-3.5-turbo',
+                    ], [
+                        'title' => 'GPT-4',
+                        'value' => 'gpt-4',
+                    ], [
+                        'title' => 'GPT-4 Turbo',
+                        'value' => 'gpt-4-turbo',
+                    ], [
+                        'title' => 'GPT-4o',
+                        'value' => 'gpt-4o',
+                    ], [
+                        'title' => 'GPT-4o Mini',
+                        'value' => 'gpt-4o-mini',
+                    ],
+                ],
+            ], [
+                'name'          => 'elevenlabs_api_key',
+                'title'         => 'admin::app.configuration.index.whatsapp.ai-agents.elevenlabs-api-key',
+                'type'          => 'password',
+                'default'       => config('whatsapp.elevenlabs_api_key'),
+                'info'          => 'admin::app.configuration.index.whatsapp.ai-agents.elevenlabs-api-key-info',
+            ],
+        ],
+    ], [
+        'key'    => 'general.whatsapp.message_settings',
+        'name'   => 'admin::app.configuration.index.whatsapp.message-settings.title',
+        'info'   => 'admin::app.configuration.index.whatsapp.message-settings.info',
+        'sort'   => 3,
+        'fields' => [
+            [
+                'name'          => 'message_delay',
+                'title'         => 'admin::app.configuration.index.whatsapp.message-settings.message-delay',
+                'type'          => 'number',
+                'default'       => config('whatsapp.message_delay'),
+                'validation'    => 'numeric|min:1|max:300',
+                'info'          => 'admin::app.configuration.index.whatsapp.message-settings.message-delay-info',
+            ], [
+                'name'          => 'followup_interval_hours',
+                'title'         => 'admin::app.configuration.index.whatsapp.message-settings.followup-interval',
+                'type'          => 'number',
+                'default'       => config('whatsapp.followup_interval_hours'),
+                'validation'    => 'numeric|min:1|max:168',
+                'info'          => 'admin::app.configuration.index.whatsapp.message-settings.followup-interval-info',
+            ], [
+                'name'          => 'max_followup_attempts',
+                'title'         => 'admin::app.configuration.index.whatsapp.message-settings.max-followup-attempts',
+                'type'          => 'number',
+                'default'       => config('whatsapp.max_followup_attempts'),
+                'validation'    => 'numeric|min:1|max:10',
+                'info'          => 'admin::app.configuration.index.whatsapp.message-settings.max-followup-attempts-info',
+            ],
+        ],
+    ], [
+        'key'    => 'general.whatsapp.business_hours',
+        'name'   => 'admin::app.configuration.index.whatsapp.business-hours.title',
+        'info'   => 'admin::app.configuration.index.whatsapp.business-hours.info',
+        'sort'   => 4,
+        'fields' => [
+            [
+                'name'          => 'start_hour',
+                'title'         => 'admin::app.configuration.index.whatsapp.business-hours.start-hour',
+                'type'          => 'number',
+                'default'       => config('whatsapp.business_hours.start'),
+                'validation'    => 'numeric|min:0|max:23',
+                'info'          => 'admin::app.configuration.index.whatsapp.business-hours.start-hour-info',
+            ], [
+                'name'          => 'end_hour',
+                'title'         => 'admin::app.configuration.index.whatsapp.business-hours.end-hour',
+                'type'          => 'number',
+                'default'       => config('whatsapp.business_hours.end'),
+                'validation'    => 'numeric|min:0|max:23',
+                'info'          => 'admin::app.configuration.index.whatsapp.business-hours.end-hour-info',
+            ],
+        ],
     ],
 ];

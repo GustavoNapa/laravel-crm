@@ -13,9 +13,15 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->baseUrl = config('whatsapp.evolution_base_url', 'https://evolution-api.com');
-        $this->token = config('whatsapp.evolution_token', '');
-        $this->instanceName = config('whatsapp.instance_name', 'quarkions_instance');
+        // Usar configurações do Krayin se disponíveis, senão usar config/whatsapp.php
+        $this->baseUrl = core()->getConfigData('general.whatsapp.evolution_api.base_url') 
+            ?? config('whatsapp.evolution_base_url', 'https://evolution-api.com');
+        
+        $this->token = core()->getConfigData('general.whatsapp.evolution_api.token') 
+            ?? config('whatsapp.evolution_token', '');
+        
+        $this->instanceName = core()->getConfigData('general.whatsapp.evolution_api.instance_name') 
+            ?? config('whatsapp.instance_name', 'quarkions_instance');
     }
 
     /**
@@ -328,6 +334,58 @@ class WhatsAppService
         // - Processar mensagem com IA
         // - Gerar resposta automática
         // - Salvar no histórico de conversas
+    }
+
+    /**
+     * Testar conexão com a Evolution API
+     */
+    public function testConnection()
+    {
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+                'Content-Type' => 'application/json'
+            ])->get($this->baseUrl . '/instance/connectionState/' . $this->instanceName);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                Log::info('Evolution API connection test successful', $data);
+                return [
+                    'success' => true,
+                    'status' => $data['instance']['state'] ?? 'unknown',
+                    'data' => $data
+                ];
+            } else {
+                Log::error('Evolution API connection test failed', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return [
+                    'success' => false,
+                    'error' => 'Connection failed: ' . $response->status()
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Evolution API connection test exception', [
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obter configurações atuais
+     */
+    public function getConfig()
+    {
+        return [
+            'base_url' => $this->baseUrl,
+            'instance_name' => $this->instanceName,
+            'has_token' => !empty($this->token)
+        ];
     }
 }
 

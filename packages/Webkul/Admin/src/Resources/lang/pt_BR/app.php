@@ -2053,6 +2053,53 @@ return [
                 ],
             ],
 
+            'whatsapp' => [
+                'title' => 'WhatsApp & Agentes IA',
+                'info'  => 'Configurações do WhatsApp Evolution API e Agentes de IA.',
+
+                'evolution-api' => [
+                    'title'                => 'Evolution API',
+                    'info'                 => 'Configure a integração com a Evolution API para WhatsApp.',
+                    'enable'               => 'Habilitar Evolution API',
+                    'base-url'             => 'URL Base da API',
+                    'base-url-info'        => 'URL base da sua instalação Evolution API (ex: https://api.evolutionapi.com)',
+                    'token'                => 'Token de Autenticação',
+                    'token-info'           => 'Token de autenticação da Evolution API para acesso seguro.',
+                    'instance-name'        => 'Nome da Instância',
+                    'instance-name-info'   => 'Nome único da instância WhatsApp na Evolution API.',
+                ],
+
+                'ai-agents' => [
+                    'title'                     => 'Agentes de IA',
+                    'info'                      => 'Configure as integrações com serviços de IA para os agentes.',
+                    'openai-api-key'            => 'Chave API OpenAI',
+                    'openai-api-key-info'       => 'Chave de API do OpenAI para conversas inteligentes dos agentes.',
+                    'openai-model'              => 'Modelo OpenAI',
+                    'elevenlabs-api-key'        => 'Chave API ElevenLabs',
+                    'elevenlabs-api-key-info'   => 'Chave de API do ElevenLabs para síntese de voz dos agentes.',
+                ],
+
+                'message-settings' => [
+                    'title'                        => 'Configurações de Mensagens',
+                    'info'                         => 'Configure parâmetros de envio e timing das mensagens.',
+                    'message-delay'                => 'Atraso entre Mensagens (segundos)',
+                    'message-delay-info'           => 'Tempo de espera entre envios de mensagens para evitar bloqueios.',
+                    'followup-interval'            => 'Intervalo de Follow-up (horas)',
+                    'followup-interval-info'       => 'Tempo entre tentativas de follow-up automático.',
+                    'max-followup-attempts'        => 'Máximo de Tentativas de Follow-up',
+                    'max-followup-attempts-info'   => 'Número máximo de tentativas automáticas de follow-up por lead.',
+                ],
+
+                'business-hours' => [
+                    'title'               => 'Horário Comercial',
+                    'info'                => 'Configure os horários para envio automático de mensagens.',
+                    'start-hour'          => 'Hora de Início',
+                    'start-hour-info'     => 'Hora de início do expediente (0-23).',
+                    'end-hour'            => 'Hora de Término',
+                    'end-hour-info'       => 'Hora de término do expediente (0-23).',
+                ],
+            ],
+
             'settings' => [
                 'title' => 'Configurações',
                 'info'  => 'Atualize suas configurações aqui.',

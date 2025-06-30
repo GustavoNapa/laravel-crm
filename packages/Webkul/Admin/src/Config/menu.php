@@ -108,6 +108,18 @@ return [
         'route'      => 'admin.quarkions.whatsapp.index',
         'sort'       => 6,
         'icon-class' => 'icon-mail',
+    ], [
+        'key'        => 'whatsapp.conversas',
+        'name'       => 'Conversas',
+        'route'      => 'admin.quarkions.whatsapp.index',
+        'sort'       => 1,
+        'icon-class' => '',
+    ], [
+        'key'        => 'whatsapp.configuracoes',
+        'name'       => 'Configurações',
+        'route'      => 'admin.quarkions.whatsapp.configuration',
+        'sort'       => 2,
+        'icon-class' => '',
     ],
 
     /**
@@ -139,7 +151,7 @@ return [
         'key'        => 'contacts',
         'name'       => 'admin::app.layouts.contacts',
         'route'      => 'admin.contacts.persons.index',
-        'sort'       => 6,
+        'sort'       => 9,
         'icon-class' => 'icon-contact',
     ], [
         'key'        => 'contacts.persons',
@@ -162,7 +174,7 @@ return [
         'key'        => 'products',
         'name'       => 'admin::app.layouts.products',
         'route'      => 'admin.products.index',
-        'sort'       => 7,
+        'sort'       => 10,
         'icon-class' => 'icon-product',
     ],
 
@@ -173,7 +185,7 @@ return [
         'key'        => 'settings',
         'name'       => 'admin::app.layouts.settings',
         'route'      => 'admin.settings.index',
-        'sort'       => 8,
+        'sort'       => 11,
         'icon-class' => 'icon-setting',
     ], [
         'key'        => 'settings.user',
@@ -325,7 +337,7 @@ return [
         'key'        => 'configuration',
         'name'       => 'admin::app.layouts.configuration',
         'route'      => 'admin.configuration.index',
-        'sort'       => 9,
+        'sort'       => 12,
         'icon-class' => 'icon-configuration',
     ],
 

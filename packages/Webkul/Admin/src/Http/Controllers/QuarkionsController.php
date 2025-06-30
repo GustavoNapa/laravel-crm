@@ -5,6 +5,7 @@ namespace Webkul\Admin\Http\Controllers;
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\AgentesController;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 
 class QuarkionsController extends Controller
@@ -12,15 +13,18 @@ class QuarkionsController extends Controller
     protected $agendaController;
     protected $whatsappController;
     protected $agentesController;
+    protected $whatsappService;
 
     public function __construct(
         AgendaController $agendaController,
         WhatsAppController $whatsappController,
-        AgentesController $agentesController
+        AgentesController $agentesController,
+        WhatsAppService $whatsappService
     ) {
         $this->agendaController = $agendaController;
         $this->whatsappController = $whatsappController;
         $this->agentesController = $agentesController;
+        $this->whatsappService = $whatsappService;
     }
 
     /**
@@ -145,5 +149,22 @@ class QuarkionsController extends Controller
     public function agentesDestroy($id)
     {
         return $this->agentesController->destroy($id);
+    }
+
+    /**
+     * WhatsApp Configuration
+     */
+    public function whatsappConfiguration()
+    {
+        return view('admin::quarkions.whatsapp.configuration');
+    }
+
+    /**
+     * Testar conexão WhatsApp Evolution API
+     */
+    public function whatsappTestConnection()
+    {
+        $result = $this->whatsappService->testConnection();
+        return response()->json($result);
     }
 }

@@ -18,8 +18,13 @@ class AIAgentService
 
     public function __construct(WhatsAppService $whatsappService)
     {
-        $this->openaiApiKey = config('whatsapp.openai_api_key');
-        $this->elevenlabsApiKey = config('whatsapp.elevenlabs_api_key');
+        // Usar configurações do Krayin se disponíveis, senão usar config/whatsapp.php
+        $this->openaiApiKey = core()->getConfigData('general.whatsapp.ai_agents.openai_api_key') 
+            ?? config('whatsapp.openai_api_key');
+        
+        $this->elevenlabsApiKey = core()->getConfigData('general.whatsapp.ai_agents.elevenlabs_api_key') 
+            ?? config('whatsapp.elevenlabs_api_key');
+        
         $this->whatsappService = $whatsappService;
     }
 
