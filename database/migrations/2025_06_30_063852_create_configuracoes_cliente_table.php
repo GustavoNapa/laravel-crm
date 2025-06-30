@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('configuracoes_cliente', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->text('cliente_id')->unique()->notNull();
+            $table->string('cliente_id')->unique();
             $table->text('prompt_qualificacao');
             $table->text('prompt_followup_1');
             $table->text('prompt_followup_2');

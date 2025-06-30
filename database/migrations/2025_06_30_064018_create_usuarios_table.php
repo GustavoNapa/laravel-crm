@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('usuarios', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->text('nome')->notNull();
-            $table->text('email')->unique();
-            $table->text('senha');
-            $table->text('tipo'); // 'admin', 'cliente', 'agente'
-            $table->text('cliente_id');
+            $table->string('nome');
+            $table->string('email')->unique();
+            $table->string('senha');
+            $table->string('tipo'); // 'admin', 'cliente', 'agente'
+            $table->string('cliente_id');
             $table->timestamp('criado_em')->default(now());
         });
     }
