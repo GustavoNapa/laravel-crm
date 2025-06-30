@@ -100,6 +100,39 @@ return [
     ],
 
     /**
+     * WhatsApp.
+     */
+    [
+        'key'        => 'whatsapp',
+        'name'       => 'WhatsApp IA',
+        'route'      => 'whatsapp.index',
+        'sort'       => 6,
+        'icon-class' => 'icon-mail',
+    ],
+
+    /**
+     * Agentes IA.
+     */
+    [
+        'key'        => 'agentes_ia',
+        'name'       => 'Agentes IA',
+        'route'      => 'agentes.index',
+        'sort'       => 7,
+        'icon-class' => 'icon-user',
+    ],
+
+    /**
+     * Agenda.
+     */
+    [
+        'key'        => 'agenda',
+        'name'       => 'Agenda',
+        'route'      => 'agenda.index',
+        'sort'       => 8,
+        'icon-class' => 'icon-calendar',
+    ],
+
+    /**
      * Contacts.
      */
     [
