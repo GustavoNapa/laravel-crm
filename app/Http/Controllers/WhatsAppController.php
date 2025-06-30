@@ -26,6 +26,10 @@ class WhatsAppController extends Controller
             ->orderBy('criado_em', 'desc')
             ->paginate(20);
         
+        if (request()->wantsJson()) {
+            return response()->json($conversas);
+        }
+        
         return view('whatsapp.index', compact('conversas'));
     }
 
@@ -36,7 +40,7 @@ class WhatsAppController extends Controller
             ->orderBy('criado_em', 'asc')
             ->get();
         
-        return view('whatsapp.chat', compact('lead', 'conversas'));
+        return response()->json(['lead' => $lead, 'conversas' => $conversas]);
     }
 
     public function sendMessage(Request $request)
@@ -96,7 +100,7 @@ class WhatsAppController extends Controller
             }
         }
         
-        return view('whatsapp.qrcode', compact('qrCode', 'status'));
+        return response()->json(['qrCode' => $qrCode, 'status' => $status]);
     }
 
     public function createInstance()

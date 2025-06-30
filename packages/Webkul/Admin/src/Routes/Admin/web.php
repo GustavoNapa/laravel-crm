@@ -46,6 +46,11 @@ require 'quote-routes.php';
 require 'configuration-routes.php';
 
 /**
+ * Quarkions routes.
+ */
+require 'quarkions-routes.php';
+
+/**
  * Rest routes.
  */
 require 'rest-routes.php';

@@ -11,12 +11,17 @@ class AgentesController extends Controller
     public function index()
     {
         $agentes = Agentes::paginate(15);
+        
+        if (request()->wantsJson()) {
+            return response()->json($agentes);
+        }
+        
         return view('agentes.index', compact('agentes'));
     }
 
     public function create()
     {
-        return view('agentes.create');
+        return response()->json(['types' => ['isis', 'bruna', 'especialista']]);
     }
 
     public function store(Request $request)
@@ -37,17 +42,17 @@ class AgentesController extends Controller
             'cliente_id' => 'default_client'
         ]);
 
-        return redirect()->route('agentes.index')->with('success', 'Agente criado com sucesso!');
+        return response()->json(['message' => 'Agente criado com sucesso!'], 201);
     }
 
     public function show(Agentes $agente)
     {
-        return view('agentes.show', compact('agente'));
+        return response()->json($agente);
     }
 
     public function edit(Agentes $agente)
     {
-        return view('agentes.edit', compact('agente'));
+        return response()->json(['agente' => $agente, 'types' => ['isis', 'bruna', 'especialista']]);
     }
 
     public function update(Request $request, Agentes $agente)
@@ -66,13 +71,13 @@ class AgentesController extends Controller
             'ativo' => $request->has('ativo')
         ]);
 
-        return redirect()->route('agentes.index')->with('success', 'Agente atualizado com sucesso!');
+        return response()->json(['message' => 'Agente atualizado com sucesso!']);
     }
 
     public function destroy(Agentes $agente)
     {
         $agente->delete();
-        return redirect()->route('agentes.index')->with('success', 'Agente excluído com sucesso!');
+        return response()->json(['message' => 'Agente excluído com sucesso!']);
     }
 
     public function dashboard()
@@ -82,6 +87,10 @@ class AgentesController extends Controller
         
         $agentesRecentes = Agentes::orderBy('id', 'desc')->take(5)->get();
         
-        return view('agentes.dashboard', compact('agentesAtivos', 'agentesInativos', 'agentesRecentes'));
+        return response()->json([
+            'agentesAtivos' => $agentesAtivos,
+            'agentesInativos' => $agentesInativos, 
+            'agentesRecentes' => $agentesRecentes
+        ]);
     }
 }

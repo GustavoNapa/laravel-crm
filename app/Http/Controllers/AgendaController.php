@@ -12,13 +12,18 @@ class AgendaController extends Controller
     public function index()
     {
         $agendamentos = Agenda::with('lead')->orderBy('data', 'desc')->paginate(15);
+        
+        if (request()->wantsJson()) {
+            return response()->json($agendamentos);
+        }
+        
         return view('agenda.index', compact('agendamentos'));
     }
 
     public function create()
     {
         $leads = LeadQuarkions::all();
-        return view('agenda.create', compact('leads'));
+        return response()->json(['leads' => $leads]);
     }
 
     public function store(Request $request)
@@ -41,19 +46,19 @@ class AgendaController extends Controller
             'observacoes' => $request->observacoes
         ]);
 
-        return redirect()->route('agenda.index')->with('success', 'Agendamento criado com sucesso!');
+        return response()->json(['message' => 'Agendamento criado com sucesso!'], 201);
     }
 
     public function show(Agenda $agenda)
     {
         $agenda->load('lead');
-        return view('agenda.show', compact('agenda'));
+        return response()->json($agenda);
     }
 
     public function edit(Agenda $agenda)
     {
         $leads = LeadQuarkions::all();
-        return view('agenda.edit', compact('agenda', 'leads'));
+        return response()->json(['agenda' => $agenda, 'leads' => $leads]);
     }
 
     public function update(Request $request, Agenda $agenda)
@@ -68,12 +73,12 @@ class AgendaController extends Controller
 
         $agenda->update($request->all());
 
-        return redirect()->route('agenda.index')->with('success', 'Agendamento atualizado com sucesso!');
+        return response()->json(['message' => 'Agendamento atualizado com sucesso!']);
     }
 
     public function destroy(Agenda $agenda)
     {
         $agenda->delete();
-        return redirect()->route('agenda.index')->with('success', 'Agendamento excluído com sucesso!');
+        return response()->json(['message' => 'Agendamento excluído com sucesso!']);
     }
 }

@@ -105,7 +105,7 @@ return [
     [
         'key'        => 'whatsapp',
         'name'       => 'WhatsApp IA',
-        'route'      => 'whatsapp.index',
+        'route'      => 'admin.quarkions.whatsapp.index',
         'sort'       => 6,
         'icon-class' => 'icon-mail',
     ],
@@ -116,7 +116,7 @@ return [
     [
         'key'        => 'agentes_ia',
         'name'       => 'Agentes IA',
-        'route'      => 'agentes.index',
+        'route'      => 'admin.quarkions.agentes.index',
         'sort'       => 7,
         'icon-class' => 'icon-user',
     ],
@@ -127,7 +127,7 @@ return [
     [
         'key'        => 'agenda',
         'name'       => 'Agenda',
-        'route'      => 'agenda.index',
+        'route'      => 'admin.quarkions.agenda.index',
         'sort'       => 8,
         'icon-class' => 'icon-calendar',
     ],
