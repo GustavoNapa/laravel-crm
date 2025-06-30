@@ -66,6 +66,21 @@
                             </p>
                         </div>
                         
+                        <div v-else-if="timeout" class="py-8">
+                            <div class="text-yellow-500">
+                                <i class="text-6xl">⏱</i>
+                            </div>
+                            <h3 class="mt-4 text-lg font-semibold text-gray-800 dark:text-white">
+                                Timeout
+                            </h3>
+                            <p class="mt-2 text-gray-600 dark:text-gray-300">
+                                {{ timeoutMessage }}
+                            </p>
+                            <button @click="tryAgain" class="mt-4 primary-button">
+                                Tentar Novamente
+                            </button>
+                        </div>
+                        
                         <div v-else class="py-8">
                             <div class="text-red-500">
                                 <i class="text-6xl">✗</i>
@@ -93,41 +108,111 @@
                     return {
                         qrCode: null,
                         status: null,
-                        loading: false
+                        loading: false,
+                        timeout: false,
+                        timeoutMessage: '',
+                        maxAttempts: 18, // 3 minutos (18 * 10 segundos)
+                        currentAttempt: 0,
+                        attemptInterval: null
                     };
                 },
 
                 mounted() {
                     this.loadQrCode();
-                    this.checkStatus();
-                    
-                    // Atualizar status a cada 5 segundos
-                    this.statusInterval = setInterval(() => {
-                        this.checkStatus();
-                    }, 5000);
                 },
 
                 beforeUnmount() {
                     if (this.statusInterval) {
                         clearInterval(this.statusInterval);
                     }
+                    if (this.attemptInterval) {
+                        clearInterval(this.attemptInterval);
+                    }
                 },
 
                 methods: {
                     loadQrCode() {
                         this.loading = true;
+                        this.timeout = false;
+                        this.currentAttempt = 0;
                         
+                        // Limpar intervalos anteriores
+                        if (this.statusInterval) {
+                            clearInterval(this.statusInterval);
+                        }
+                        if (this.attemptInterval) {
+                            clearInterval(this.attemptInterval);
+                        }
+                        
+                        this.attemptToGetQrCode();
+                    },
+
+                    attemptToGetQrCode() {
+                        if (this.currentAttempt >= this.maxAttempts) {
+                            this.handleTimeout();
+                            return;
+                        }
+
                         this.$http.get("{{ route('admin.quarkions.whatsapp.qrcode') }}")
                             .then(response => {
-                                this.qrCode = response.data.qrCode;
-                                this.status = response.data.status;
+                                if (response.data.success) {
+                                    if (response.data.connected) {
+                                        // Já está conectado
+                                        this.status = { state: 'open' };
+                                        this.loading = false;
+                                    } else if (response.data.qrcode) {
+                                        // QR Code obtido com sucesso
+                                        this.qrCode = response.data.qrcode;
+                                        this.loading = false;
+                                        this.startStatusCheck();
+                                    } else {
+                                        // Tentar novamente em 10 segundos
+                                        this.scheduleNextAttempt();
+                                    }
+                                } else if (response.data.timeout) {
+                                    this.handleTimeout();
+                                } else {
+                                    this.scheduleNextAttempt();
+                                }
                             })
                             .catch(error => {
                                 console.error('Erro ao carregar QR Code:', error);
-                            })
-                            .finally(() => {
-                                this.loading = false;
+                                this.scheduleNextAttempt();
                             });
+                    },
+
+                    scheduleNextAttempt() {
+                        this.currentAttempt++;
+                        
+                        if (this.currentAttempt >= this.maxAttempts) {
+                            this.handleTimeout();
+                            return;
+                        }
+
+                        this.attemptInterval = setTimeout(() => {
+                            this.attemptToGetQrCode();
+                        }, 10000); // 10 segundos
+                    },
+
+                    handleTimeout() {
+                        this.loading = false;
+                        this.timeout = true;
+                        this.timeoutMessage = 'Timeout ao gerar QR Code após 3 minutos. Deseja tentar novamente?';
+                        
+                        // Limpar intervalos
+                        if (this.statusInterval) {
+                            clearInterval(this.statusInterval);
+                        }
+                        if (this.attemptInterval) {
+                            clearInterval(this.attemptInterval);
+                        }
+                    },
+
+                    startStatusCheck() {
+                        // Verificar status a cada 5 segundos
+                        this.statusInterval = setInterval(() => {
+                            this.checkStatus();
+                        }, 5000);
                     },
 
                     checkStatus() {
@@ -147,6 +232,12 @@
 
                     refreshQrCode() {
                         this.qrCode = null;
+                        this.loadQrCode();
+                    },
+
+                    tryAgain() {
+                        this.timeout = false;
+                        this.timeoutMessage = '';
                         this.loadQrCode();
                     }
                 }

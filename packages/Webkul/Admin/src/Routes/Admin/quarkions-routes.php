@@ -13,12 +13,15 @@ Route::group(['middleware' => ['user']], function () {
          */
         Route::prefix('agenda')->group(function () {
             Route::get('', [QuarkionsController::class, 'agendaIndex'])->name('admin.quarkions.agenda.index');
+            Route::get('events', [QuarkionsController::class, 'agendaEvents'])->name('admin.quarkions.agenda.events');
             Route::get('create', [QuarkionsController::class, 'agendaCreate'])->name('admin.quarkions.agenda.create');
             Route::post('', [QuarkionsController::class, 'agendaStore'])->name('admin.quarkions.agenda.store');
             Route::get('{id}', [QuarkionsController::class, 'agendaShow'])->name('admin.quarkions.agenda.show');
             Route::get('{id}/edit', [QuarkionsController::class, 'agendaEdit'])->name('admin.quarkions.agenda.edit');
             Route::put('{id}', [QuarkionsController::class, 'agendaUpdate'])->name('admin.quarkions.agenda.update');
             Route::delete('{id}', [QuarkionsController::class, 'agendaDestroy'])->name('admin.quarkions.agenda.destroy');
+            Route::post('sync-google', [QuarkionsController::class, 'agendaSyncGoogle'])->name('admin.quarkions.agenda.sync-google');
+            Route::post('import-google', [QuarkionsController::class, 'agendaImportGoogle'])->name('admin.quarkions.agenda.import-google');
         });
 
         /**

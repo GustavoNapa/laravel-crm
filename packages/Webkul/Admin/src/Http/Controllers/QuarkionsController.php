@@ -2,29 +2,24 @@
 
 namespace Webkul\Admin\Http\Controllers;
 
-use App\Http\Controllers\AgendaController;
-use App\Http\Controllers\WhatsAppController;
-use App\Http\Controllers\AgentesController;
 use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
+use App\Models\Agenda;
+use App\Models\LeadQuarkions;
+use App\Services\GoogleCalendarSyncService;
+use Carbon\Carbon;
 
 class QuarkionsController extends Controller
 {
-    protected $agendaController;
-    protected $whatsappController;
-    protected $agentesController;
     protected $whatsappService;
+    protected $googleCalendarService;
 
     public function __construct(
-        AgendaController $agendaController,
-        WhatsAppController $whatsappController,
-        AgentesController $agentesController,
-        WhatsAppService $whatsappService
+        WhatsAppService $whatsappService,
+        GoogleCalendarSyncService $googleCalendarService
     ) {
-        $this->agendaController = $agendaController;
-        $this->whatsappController = $whatsappController;
-        $this->agentesController = $agentesController;
         $this->whatsappService = $whatsappService;
+        $this->googleCalendarService = $googleCalendarService;
     }
 
     /**
@@ -42,7 +37,36 @@ class QuarkionsController extends Controller
 
     public function agendaStore(Request $request)
     {
-        return $this->agendaController->store($request);
+        $request->validate([
+            'titulo' => 'nullable|string|max:255',
+            'data' => 'required|date',
+            'horario' => 'required|date_format:H:i',
+            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes' => 'nullable|string',
+            'lead_id' => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean'
+        ]);
+
+        $agenda = Agenda::create([
+            'cliente_id' => 'default',
+            'lead_id' => $request->lead_id,
+            'data' => $request->data,
+            'horario' => $request->horario . ':00',
+            'status' => $request->status,
+            'observacoes' => $request->observacoes,
+            'titulo' => $request->titulo,
+            'sync_with_google' => $request->boolean('sync_with_google', false),
+        ]);
+
+        if ($agenda->sync_with_google) {
+            $this->googleCalendarService->syncToGoogle($agenda);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Agendamento criado com sucesso!',
+            'agenda' => $agenda
+        ]);
     }
 
     public function agendaShow($id)
@@ -57,12 +81,129 @@ class QuarkionsController extends Controller
 
     public function agendaUpdate(Request $request, $id)
     {
-        return $this->agendaController->update($request, $id);
+        $agenda = Agenda::findOrFail($id);
+        
+        $request->validate([
+            'titulo' => 'nullable|string|max:255',
+            'data' => 'required|date',
+            'horario' => 'required|date_format:H:i',
+            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes' => 'nullable|string',
+            'lead_id' => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean'
+        ]);
+
+        $agenda->update([
+            'lead_id' => $request->lead_id,
+            'data' => $request->data,
+            'horario' => $request->horario . ':00',
+            'status' => $request->status,
+            'observacoes' => $request->observacoes,
+            'titulo' => $request->titulo,
+            'sync_with_google' => $request->boolean('sync_with_google', $agenda->sync_with_google),
+        ]);
+
+        if ($agenda->sync_with_google) {
+            $this->googleCalendarService->syncToGoogle($agenda);
+        } elseif ($agenda->google_event_id) {
+            $this->googleCalendarService->deleteFromGoogle($agenda);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Agendamento atualizado com sucesso!',
+            'agenda' => $agenda
+        ]);
     }
 
     public function agendaDestroy($id)
     {
-        return $this->agendaController->destroy($id);
+        $agenda = Agenda::findOrFail($id);
+        
+        if ($agenda->google_event_id) {
+            $this->googleCalendarService->deleteFromGoogle($agenda);
+        }
+
+        $agenda->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Agendamento excluído com sucesso!'
+        ]);
+    }
+
+    public function agendaEvents(Request $request)
+    {
+        $start = $request->get('start');
+        $end = $request->get('end');
+
+        $query = Agenda::query();
+
+        if ($start && $end) {
+            $query->whereBetween('data', [
+                Carbon::parse($start)->format('Y-m-d'),
+                Carbon::parse($end)->format('Y-m-d')
+            ]);
+        }
+
+        $agendamentos = $query->with(['lead'])->get();
+
+        $events = $agendamentos->map(function ($agenda) {
+            return [
+                'id' => $agenda->id,
+                'title' => $agenda->titulo ?? ($agenda->lead->nome ?? 'Agendamento'),
+                'start' => $agenda->data . 'T' . $agenda->horario,
+                'className' => 'fc-event-' . $agenda->status,
+                'extendedProps' => [
+                    'status' => $agenda->status,
+                    'observacoes' => $agenda->observacoes,
+                    'lead_id' => $agenda->lead_id,
+                    'sync_with_google' => $agenda->sync_with_google,
+                    'google_event_id' => $agenda->google_event_id,
+                ]
+            ];
+        });
+
+        return response()->json($events);
+    }
+
+    public function agendaSyncGoogle(Request $request)
+    {
+        try {
+            $synced = $this->googleCalendarService->syncPendingEvents();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Sincronização concluída com sucesso!',
+                'synced' => $synced
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro na sincronização: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function agendaImportGoogle(Request $request)
+    {
+        try {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            
+            $imported = $this->googleCalendarService->importFromGoogle($startDate, $endDate);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Importação concluída com sucesso!',
+                'imported' => $imported
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro na importação: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

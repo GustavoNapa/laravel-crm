@@ -88,19 +88,48 @@ class WhatsAppController extends Controller
 
     public function qrCode()
     {
-        $qrCode = cache('whatsapp_qrcode');
-        $status = $this->whatsappService->getInstanceStatus();
-        
-        if (!$qrCode && $status['state'] !== 'open') {
-            // Tentar obter novo QR Code
-            $qrData = $this->whatsappService->getQRCode();
-            if ($qrData && isset($qrData['qrcode'])) {
-                $qrCode = $qrData['qrcode'];
-                cache(['whatsapp_qrcode' => $qrCode], now()->addMinutes(5));
+        try {
+            $maxAttempts = 18; // 3 minutos (18 * 10 segundos)
+            $attempts = 0;
+
+            while ($attempts < $maxAttempts) {
+                $status = $this->whatsappService->getInstanceStatus();
+                
+                if (isset($status['state']) && $status['state'] === 'open') {
+                    return response()->json([
+                        'success' => true,
+                        'connected' => true,
+                        'message' => 'WhatsApp já está conectado'
+                    ]);
+                }
+
+                $qrData = $this->whatsappService->getQRCode();
+                
+                if ($qrData && isset($qrData['qrcode'])) {
+                    return response()->json([
+                        'success' => true,
+                        'qrcode' => $qrData['qrcode'],
+                        'connected' => false
+                    ]);
+                }
+
+                $attempts++;
+                sleep(10); // Aguarda 10 segundos antes de tentar novamente
             }
+
+            // Timeout após 3 minutos
+            return response()->json([
+                'success' => false,
+                'timeout' => true,
+                'message' => 'Timeout ao gerar QR Code. Tente novamente.'
+            ], 408);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao obter QR Code: ' . $e->getMessage()
+            ], 500);
         }
-        
-        return response()->json(['qrCode' => $qrCode, 'status' => $status]);
     }
 
     public function createInstance()

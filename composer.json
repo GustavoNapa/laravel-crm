@@ -24,6 +24,7 @@
         "mpdf/mpdf": "^8.2",
         "prettus/l5-repository": "^2.7.9",
         "smalot/pdfparser": "^2.11",
+        "spatie/laravel-google-calendar": "^3.8",
         "webklex/laravel-imap": "^5.3"
     },
     "require-dev": {
