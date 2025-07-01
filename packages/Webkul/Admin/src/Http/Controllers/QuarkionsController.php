@@ -211,7 +211,15 @@ class QuarkionsController extends Controller
      */
     public function whatsappIndex()
     {
-        return view('admin::quarkions.whatsapp.index');
+        $conversas = \App\Models\HistoricoConversas::with('lead')
+            ->orderBy('criado_em', 'desc')
+            ->paginate(20);
+        
+        if (request()->wantsJson()) {
+            return response()->json($conversas);
+        }
+        
+        return view('admin::quarkions.whatsapp.index', compact('conversas'));
     }
 
     public function whatsappChat($leadId)
@@ -246,7 +254,16 @@ class QuarkionsController extends Controller
 
     public function whatsappGetStatus()
     {
-        return $this->whatsappController->getStatus();
+        try {
+            $evolutionService = new \App\Services\EvolutionSessionService();
+            $status = $evolutionService->getSessionStatus();
+            return response()->json($status);
+        } catch (\Exception $e) {
+            return response()->json([
+                'state' => 'error',
+                'message' => 'Erro ao verificar status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -305,7 +322,15 @@ class QuarkionsController extends Controller
      */
     public function whatsappTestConnection()
     {
-        $result = $this->whatsappService->testConnection();
-        return response()->json($result);
+        try {
+            $evolutionService = new \App\Services\EvolutionSessionService();
+            $result = $evolutionService->testConnection();
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro ao testar conexão: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
