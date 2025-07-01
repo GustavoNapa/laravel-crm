@@ -381,31 +381,39 @@
                             color: 'bg-yellow-400'
                         };
 
-                        this.$http.get("{{ route('admin.quarkions.whatsapp.test-connection') }}")
-                            .then(response => {
-                                if (response.data.success) {
-                                    this.connectionStatus = {
-                                        text: 'Conectado (' + (response.data.status || 'online') + ')',
-                                        color: 'bg-green-500'
-                                    };
-                                } else {
-                                    this.connectionStatus = {
-                                        text: 'Falha na conexão',
-                                        color: 'bg-red-500'
-                                    };
-                                    console.error('Connection test failed:', response.data.error);
-                                }
-                            })
-                            .catch(error => {
+                        fetch("{{ route('admin.quarkions.whatsapp.test-connection') }}", {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
                                 this.connectionStatus = {
-                                    text: 'Erro no teste',
+                                    text: 'Conectado (' + (data.status || 'online') + ')',
+                                    color: 'bg-green-500'
+                                };
+                            } else {
+                                this.connectionStatus = {
+                                    text: 'Falha na conexão',
                                     color: 'bg-red-500'
                                 };
-                                console.error('Connection test error:', error);
-                            })
-                            .finally(() => {
-                                this.testing = false;
-                            });
+                                console.error('Connection test failed:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            this.connectionStatus = {
+                                text: 'Erro de conexão',
+                                color: 'bg-red-500'
+                            };
+                            console.error('Connection test error:', error);
+                        })
+                        .finally(() => {
+                            this.testing = false;
+                        });
                     }
                 }
             });

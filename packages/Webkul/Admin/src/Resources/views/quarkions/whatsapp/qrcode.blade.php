@@ -153,32 +153,40 @@
                             return;
                         }
 
-                        this.$http.get("{{ route('admin.quarkions.whatsapp.qrcode') }}")
-                            .then(response => {
-                                if (response.data.success) {
-                                    if (response.data.connected) {
-                                        // Já está conectado
-                                        this.status = { state: 'open' };
-                                        this.loading = false;
-                                    } else if (response.data.qrcode) {
-                                        // QR Code obtido com sucesso
-                                        this.qrCode = response.data.qrcode;
-                                        this.loading = false;
-                                        this.startStatusCheck();
-                                    } else {
-                                        // Tentar novamente em 10 segundos
-                                        this.scheduleNextAttempt();
-                                    }
-                                } else if (response.data.timeout) {
-                                    this.handleTimeout();
+                        fetch("{{ route('admin.quarkions.whatsapp.qrcode') }}", {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                if (data.connected) {
+                                    // Já está conectado
+                                    this.status = { state: 'open' };
+                                    this.loading = false;
+                                } else if (data.qrcode) {
+                                    // QR Code obtido com sucesso
+                                    this.qrCode = data.qrcode;
+                                    this.loading = false;
+                                    this.startStatusCheck();
                                 } else {
+                                    // Tentar novamente em 10 segundos
                                     this.scheduleNextAttempt();
                                 }
-                            })
-                            .catch(error => {
-                                console.error('Erro ao carregar QR Code:', error);
+                            } else if (data.timeout) {
+                                this.handleTimeout();
+                            } else {
                                 this.scheduleNextAttempt();
-                            });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar QR Code:', error);
+                            this.scheduleNextAttempt();
+                        });
                     },
 
                     scheduleNextAttempt() {
@@ -216,18 +224,26 @@
                     },
 
                     checkStatus() {
-                        this.$http.get("{{ route('admin.quarkions.whatsapp.status') }}")
-                            .then(response => {
-                                this.status = response.data;
-                                
-                                // Se conectado, parar de verificar
-                                if (response.data.state === 'open' && this.statusInterval) {
-                                    clearInterval(this.statusInterval);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Erro ao verificar status:', error);
-                            });
+                        fetch("{{ route('admin.quarkions.whatsapp.status') }}", {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            this.status = data;
+                            
+                            // Se conectado, parar de verificar
+                            if (data.state === 'open' && this.statusInterval) {
+                                clearInterval(this.statusInterval);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao verificar status:', error);
+                        });
                     },
 
                     refreshQrCode() {

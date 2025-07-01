@@ -136,26 +136,44 @@
                 loadConversas() {
                     this.loading = true;
                     
-                    this.$http.get("{{ route('admin.quarkions.whatsapp.index') }}")
-                        .then(response => {
-                            this.conversas = response.data.data || [];
-                        })
-                        .catch(error => {
-                            console.error('Erro ao carregar conversas:', error);
-                        })
-                        .finally(() => {
-                            this.loading = false;
-                        });
+                    fetch("{{ route('admin.quarkions.whatsapp.index') }}", {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.conversas = data.data || [];
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar conversas:', error);
+                        this.conversas = [];
+                    })
+                    .finally(() => {
+                        this.loading = false;
+                    });
                 },
 
                 checkStatus() {
-                    this.$http.get("{{ route('admin.quarkions.whatsapp.status') }}")
-                        .then(response => {
-                            this.status = response.data.state || 'close';
-                        })
-                        .catch(error => {
-                            console.error('Erro ao verificar status:', error);
-                        });
+                    fetch("{{ route('admin.quarkions.whatsapp.status') }}", {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.status = data.state || 'close';
+                    })
+                    .catch(error => {
+                        console.error('Erro ao verificar status:', error);
+                        this.status = 'error';
+                    });
                 },
 
                 chatUrl(leadId) {
