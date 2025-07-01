@@ -131,6 +131,29 @@
                 },
 
                 methods: {
+                    getCsrfToken() {
+                        // Tentar obter o token de várias formas
+                        const metaTag = document.querySelector('meta[name="csrf-token"]');
+                        if (metaTag) {
+                            return metaTag.getAttribute('content');
+                        }
+                        
+                        // Fallback: tentar obter de um input hidden
+                        const hiddenInput = document.querySelector('input[name="_token"]');
+                        if (hiddenInput) {
+                            return hiddenInput.value;
+                        }
+                        
+                        // Fallback: tentar obter do Laravel global
+                        if (window.Laravel && window.Laravel.csrfToken) {
+                            return window.Laravel.csrfToken;
+                        }
+                        
+                        // Último fallback: retornar string vazia (será tratado no backend)
+                        console.warn('CSRF token não encontrado');
+                        return '';
+                    },
+
                     loadQrCode() {
                         this.loading = true;
                         this.timeout = false;
@@ -158,7 +181,7 @@
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                'X-CSRF-TOKEN': this.getCsrfToken()
                             }
                         })
                         .then(response => response.json())
@@ -229,7 +252,7 @@
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                'X-CSRF-TOKEN': this.getCsrfToken()
                             }
                         })
                         .then(response => response.json())
