@@ -3,6 +3,8 @@
 namespace Webkul\Admin\Http\Controllers;
 
 use App\Services\WhatsAppService;
+use App\Repositories\WhatsappConversationRepository;
+use App\Services\EvolutionSessionService;
 use Illuminate\Http\Request;
 use App\Models\Agenda;
 use App\Models\LeadQuarkions;
@@ -13,13 +15,19 @@ class QuarkionsController extends Controller
 {
     protected $whatsappService;
     protected $googleCalendarService;
+    protected $conversationRepository;
+    protected $evolutionService;
 
     public function __construct(
         WhatsAppService $whatsappService,
-        GoogleCalendarSyncService $googleCalendarService
+        GoogleCalendarSyncService $googleCalendarService,
+        WhatsappConversationRepository $conversationRepository,
+        EvolutionSessionService $evolutionService
     ) {
         $this->whatsappService = $whatsappService;
         $this->googleCalendarService = $googleCalendarService;
+        $this->conversationRepository = $conversationRepository;
+        $this->evolutionService = $evolutionService;
     }
 
     /**
@@ -211,25 +219,12 @@ class QuarkionsController extends Controller
      */
     public function whatsappIndex()
     {
-        $conversas = \App\Models\HistoricoConversas::with('lead')
-            ->orderBy('criado_em', 'desc')
-            ->paginate(20);
-        
-        if (request()->wantsJson()) {
-            return response()->json($conversas);
-        }
-        
-        return view('admin::quarkions.whatsapp.index', compact('conversas'));
+        return view('admin::quarkions.whatsapp.inbox');
     }
 
     public function whatsappChat($leadId)
     {
         return view('admin::quarkions.whatsapp.chat', ['leadId' => $leadId]);
-    }
-
-    public function whatsappSendMessage(Request $request)
-    {
-        return $this->whatsappController->sendMessage($request);
     }
 
     public function whatsappQrCode()
@@ -239,7 +234,20 @@ class QuarkionsController extends Controller
 
     public function whatsappWebhook(Request $request)
     {
-        return $this->whatsappController->webhook($request);
+        try {
+            $data = $request->all();
+            \Log::info('WhatsApp Webhook recebido:', $data);
+            
+            $result = $this->evolutionService->processWebhook($data);
+            
+            return response()->json($result, $result['success'] ? 200 : 400);
+        } catch (\Exception $e) {
+            \Log::error('Erro no webhook WhatsApp: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno'
+            ], 500);
+        }
     }
 
     public function whatsappCreateInstance(Request $request)
@@ -323,13 +331,154 @@ class QuarkionsController extends Controller
     public function whatsappTestConnection()
     {
         try {
-            $evolutionService = new \App\Services\EvolutionSessionService();
-            $result = $evolutionService->testConnection();
+            $result = $this->evolutionService->testConnection();
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Erro ao testar conexão: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Listar conversas WhatsApp
+     */
+    public function whatsappConversations(Request $request)
+    {
+        try {
+            $filters = [
+                'search' => $request->get('search'),
+                'status' => $request->get('status'),
+                'unread_only' => $request->get('unread_only', false)
+            ];
+
+            $conversations = $this->conversationRepository->getConversations($filters, $request->get('per_page', 15));
+            $stats = $this->conversationRepository->getConversationStats();
+
+            return response()->json([
+                'success' => true,
+                'data' => $conversations,
+                'stats' => $stats
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao carregar conversas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obter histórico de uma conversa específica
+     */
+    public function whatsappConversationHistory($id, Request $request)
+    {
+        try {
+            $history = $this->conversationRepository->getConversationHistory($id, $request->get('per_page', 50));
+            $conversation = $this->conversationRepository->findByLeadId($id);
+
+            // Marcar mensagens como lidas
+            $this->conversationRepository->markAsRead($id, auth()->id());
+
+            return response()->json([
+                'success' => true,
+                'conversation' => $conversation,
+                'messages' => $history
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao carregar histórico: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enviar mensagem WhatsApp
+     */
+    public function whatsappSendMessage(Request $request)
+    {
+        try {
+            $request->validate([
+                'lead_id' => 'required|exists:leads_quarkions,id',
+                'message' => 'required|string'
+            ]);
+
+            $lead = LeadQuarkions::find($request->lead_id);
+            
+            // Enviar via Evolution API
+            $result = $this->evolutionService->sendTextMessage($lead->telefone, $request->message);
+
+            if ($result['success']) {
+                // Salvar no histórico
+                $message = $this->conversationRepository->createMessage([
+                    'lead_id' => $request->lead_id,
+                    'message' => $request->message,
+                    'type' => 'enviada',
+                    'status' => 'sent',
+                    'message_id' => $result['message_id'] ?? null
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'data' => $result
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Falha ao enviar mensagem: ' . ($result['message'] ?? 'Erro desconhecido')
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao enviar mensagem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar conversa como lida
+     */
+    public function whatsappMarkAsRead($id)
+    {
+        try {
+            $this->conversationRepository->markAsRead($id, auth()->id());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Conversa marcada como lida'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao marcar como lida: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualizar status da conversa
+     */
+    public function whatsappUpdateStatus(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:ativo,inativo,resolvido,pendente'
+            ]);
+
+            $this->conversationRepository->updateConversationStatus($id, $request->status);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status atualizado com sucesso'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar status: ' . $e->getMessage()
             ], 500);
         }
     }

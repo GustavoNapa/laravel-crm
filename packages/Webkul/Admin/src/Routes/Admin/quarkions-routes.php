@@ -28,16 +28,23 @@ Route::group(['middleware' => ['user']], function () {
          * WhatsApp routes.
          */
         Route::prefix('whatsapp')->group(function () {
+            // Interface principal
             Route::get('', [QuarkionsController::class, 'whatsappIndex'])->name('admin.quarkions.whatsapp.index');
             Route::get('configuration', [QuarkionsController::class, 'whatsappConfiguration'])->name('admin.quarkions.whatsapp.configuration');
-            Route::get('test-connection', [QuarkionsController::class, 'whatsappTestConnection'])->name('admin.quarkions.whatsapp.test-connection');
-            Route::get('chat/{leadId}', [QuarkionsController::class, 'whatsappChat'])->name('admin.quarkions.whatsapp.chat');
-            Route::post('send-message', [QuarkionsController::class, 'whatsappSendMessage'])->name('admin.quarkions.whatsapp.send');
             Route::get('qrcode', [QuarkionsController::class, 'whatsappQrCode'])->name('admin.quarkions.whatsapp.qrcode');
-            Route::post('webhook', [QuarkionsController::class, 'whatsappWebhook'])->name('admin.quarkions.whatsapp.webhook');
-            Route::post('create-instance', [QuarkionsController::class, 'whatsappCreateInstance'])->name('admin.quarkions.whatsapp.create-instance');
-            Route::post('set-webhook', [QuarkionsController::class, 'whatsappSetWebhook'])->name('admin.quarkions.whatsapp.set-webhook');
+            Route::get('chat/{leadId}', [QuarkionsController::class, 'whatsappChat'])->name('admin.quarkions.whatsapp.chat');
+            
+            // API endpoints
+            Route::get('test-connection', [QuarkionsController::class, 'whatsappTestConnection'])->name('admin.quarkions.whatsapp.test-connection');
             Route::get('status', [QuarkionsController::class, 'whatsappGetStatus'])->name('admin.quarkions.whatsapp.status');
+            Route::post('webhook', [QuarkionsController::class, 'whatsappWebhook'])->name('admin.quarkions.whatsapp.webhook');
+            
+            // Conversas e mensagens
+            Route::get('conversations', [QuarkionsController::class, 'whatsappConversations'])->name('admin.quarkions.whatsapp.conversations');
+            Route::get('conversations/{id}', [QuarkionsController::class, 'whatsappConversationHistory'])->name('admin.quarkions.whatsapp.conversation.history');
+            Route::post('send-message', [QuarkionsController::class, 'whatsappSendMessage'])->name('admin.quarkions.whatsapp.send-message');
+            Route::post('conversations/{id}/mark-read', [QuarkionsController::class, 'whatsappMarkAsRead'])->name('admin.quarkions.whatsapp.mark-read');
+            Route::patch('conversations/{id}/status', [QuarkionsController::class, 'whatsappUpdateStatus'])->name('admin.quarkions.whatsapp.update-status');
         });
 
         /**
@@ -55,3 +62,4 @@ Route::group(['middleware' => ['user']], function () {
         });
     });
 });
+

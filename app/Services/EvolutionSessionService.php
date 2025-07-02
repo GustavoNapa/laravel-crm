@@ -375,5 +375,81 @@ class EvolutionSessionService
             ];
         }
     }
+
+    /**
+     * Processar webhook de mensagem recebida
+     */
+    public function processWebhook($data)
+    {
+        try {
+            if (!isset($data['event']) || $data['event'] !== 'messages.upsert') {
+                return ['success' => false, 'message' => 'Evento não suportado'];
+            }
+
+            $messageData = $data['data'] ?? [];
+            if (empty($messageData)) {
+                return ['success' => false, 'message' => 'Dados da mensagem não encontrados'];
+            }
+
+            // Extrair informações da mensagem
+            $remoteJid = $messageData['key']['remoteJid'] ?? '';
+            $messageText = $messageData['message']['conversation'] ?? 
+                          $messageData['message']['extendedTextMessage']['text'] ?? '';
+            $messageId = $messageData['key']['id'] ?? '';
+            $timestamp = $messageData['messageTimestamp'] ?? time();
+
+            if (empty($remoteJid) || empty($messageText)) {
+                return ['success' => false, 'message' => 'Dados incompletos da mensagem'];
+            }
+
+            // Extrair número de telefone
+            $phoneNumber = str_replace(['@s.whatsapp.net', '@g.us'], '', $remoteJid);
+            
+            // Buscar ou criar lead
+            $lead = \App\Models\LeadQuarkions::firstOrCreate(
+                ['telefone' => $phoneNumber],
+                [
+                    'nome' => 'Usuário ' . substr($phoneNumber, -4),
+                    'status' => 'ativo',
+                    'origem' => 'whatsapp'
+                ]
+            );
+
+            // Criar registro da mensagem
+            $message = \App\Models\HistoricoConversas::create([
+                'lead_id' => $lead->id,
+                'mensagem' => $messageText,
+                'tipo' => 'recebida',
+                'status' => 'received',
+                'message_id' => $messageId,
+                'lida' => false,
+                'created_at' => \Carbon\Carbon::createFromTimestamp($timestamp),
+                'updated_at' => now()
+            ]);
+
+            // Disparar evento para broadcast
+            event(new \App\Events\WhatsAppMessageReceived($message));
+
+            return [
+                'success' => true,
+                'message' => 'Mensagem processada com sucesso',
+                'data' => [
+                    'lead_id' => $lead->id,
+                    'message_id' => $message->id
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao processar webhook WhatsApp: ' . $e->getMessage(), [
+                'data' => $data,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
+            ];
+        }
+    }
 }
 
