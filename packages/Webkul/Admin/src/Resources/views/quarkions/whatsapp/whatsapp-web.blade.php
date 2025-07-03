@@ -59,12 +59,12 @@
                     <!-- Conversations -->
                     <div v-else>
                         <div 
-                            v-for="conversation in filteredConversations" 
+                            v-for="conversation in (whatsapp ? whatsapp.conversations : [])" 
                             :key="conversation.id"
                             @click="selectConversation(conversation)"
                             :class="[
                                 'flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100',
-                                selectedConversation?.id === conversation.id ? 'bg-gray-100' : ''
+                                (whatsapp && whatsapp.selectedConversation && whatsapp.selectedConversation.id === conversation.id) ? 'bg-gray-100' : ''
                             ]"
                         >
                             <!-- Avatar -->
@@ -239,15 +239,93 @@
     <script type="module">
     document.addEventListener('DOMContentLoaded', function() {
         function initWhatsappInbox() {
-            // Check if Vue is available
-            if (typeof Vue === 'undefined') {
-                console.error('Vue is not loaded');
+            console.log('Inicializando WhatsApp Inbox...');
+            
+            // Aguardar window.app estar disponível
+            if (typeof window.app === 'undefined') {
+                console.log('window.app não disponível, aguardando...');
+                setTimeout(initWhatsappInbox, 100);
                 return;
             }
             
-            const { createApp } = Vue;
+            console.log('window.app disponível, criando componente...');
             
-            createApp({
+            // Adicionar dados do WhatsApp à instância global do Vue
+            if (window.app && window.app._instance && window.app._instance.data) {
+                Object.assign(window.app._instance.data, {
+                    whatsapp: {
+                        conversations: [],
+                        selectedConversation: null,
+                        messages: [],
+                        searchQuery: '',
+                        newMessage: '',
+                        loading: true,
+                        loadingMessages: false,
+                        sending: false,
+                        connectionStatus: 'connecting'
+                    }
+                });
+                
+                // Adicionar métodos do WhatsApp
+                Object.assign(window.app._instance.methods || {}, {
+                    async loadConversations() {
+                        try {
+                            this.whatsapp.loading = true;
+                            const response = await fetch('/admin/quarkions/whatsapp/conversations');
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                this.whatsapp.conversations = data.conversations || [];
+                            } else {
+                                console.error('Erro ao carregar conversas:', data.message);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar conversas:', error);
+                        } finally {
+                            this.whatsapp.loading = false;
+                        }
+                    },
+                    
+                    async selectConversation(conversation) {
+                        this.whatsapp.selectedConversation = conversation;
+                        await this.loadMessages(conversation.id);
+                    },
+                    
+                    async loadMessages(conversationId) {
+                        try {
+                            this.whatsapp.loadingMessages = true;
+                            const response = await fetch(`/admin/quarkions/whatsapp/conversations/${conversationId}`);
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                this.whatsapp.messages = data.messages || [];
+                            } else {
+                                console.error('Erro ao carregar mensagens:', data.message);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar mensagens:', error);
+                        } finally {
+                            this.whatsapp.loadingMessages = false;
+                        }
+                    }
+                });
+                
+                // Carregar conversas iniciais
+                if (window.app._instance.methods.loadConversations) {
+                    window.app._instance.methods.loadConversations.call(window.app._instance.data);
+                }
+                
+                console.log('WhatsApp Inbox inicializado com sucesso!');
+                return;
+            }
+            
+            console.log('Fallback: usando createApp independente...');
+            
+            // Fallback: criar app independente
+            try {
+                // Tentar importar Vue dinamicamente
+                import('vue').then(({ createApp }) => {
+                    const app = createApp({
                 data() {
                     return {
                         conversations: [],
@@ -446,19 +524,19 @@
                         this.checkConnectionStatus();
                     }, 5000);
                 }
-            }).mount('#whatsapp-web-app');
-        }
-        
-        // Aguardar Vue e app estarem disponíveis
-        function waitForVue() {
-            if (typeof Vue !== 'undefined') {
-                initWhatsappInbox();
-            } else {
-                setTimeout(waitForVue, 100);
+            });
+            
+            app.mount('#whatsapp-web-app');
+            }).catch(error => {
+                console.error('Erro ao carregar Vue:', error);
+            });
+            } catch (error) {
+                console.error('Erro no fallback:', error);
             }
         }
         
-        waitForVue();
+        // Inicializar diretamente
+        initWhatsappInbox();
     });
     </script>
 @endpushOnce
