@@ -9,13 +9,19 @@ use Illuminate\Support\Facades\DB;
 class WhatsappConversationRepository
 {
     /**
-     * Buscar conversas com paginação e filtros
+     * Buscar conversas com paginação e filtros otimizada
      */
     public function getConversations($filters = [], $perPage = 15)
     {
-        $query = HistoricoConversas::with(['lead'])
+        $query = HistoricoConversas::with(['lead' => function($query) {
+                // Apenas campos necessários do lead
+                $query->select('id', 'nome', 'telefone', 'status');
+            }])
             ->select([
-                'historico_conversas.*',
+                'historico_conversas.id',
+                'historico_conversas.lead_id',
+                'historico_conversas.mensagem',
+                'historico_conversas.criado_em',
                 DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
                 DB::raw('COUNT(historico_conversas.id) as message_count'),
             ])
@@ -38,23 +44,43 @@ class WhatsappConversationRepository
             $query->where('leads_quarkions.status', $filters['status']);
         }
 
-        // Filtro por não lidas - removido pois coluna 'lida' não existe
-        // if (!empty($filters['unread_only'])) {
-        //     $query->having('unread_count', '>', 0);
-        // }
+        // Otimização: usar cursor pagination para melhor performance
+        if (isset($filters['cursor']) && $filters['cursor']) {
+            $query->where('historico_conversas.criado_em', '<', $filters['cursor']);
+        }
 
         return $query->paginate($perPage);
     }
 
     /**
-     * Buscar histórico de mensagens de uma conversa específica
+     * Buscar histórico de mensagens de uma conversa específica com paginação otimizada
      */
-    public function getConversationHistory($leadId, $perPage = 50)
+    public function getConversationHistory($leadId, $perPage = 50, $cursor = null)
     {
-        return HistoricoConversas::with(['lead'])
+        $query = HistoricoConversas::with(['lead' => function($query) {
+                $query->select('id', 'nome', 'telefone');
+            }])
             ->where('lead_id', $leadId)
-            ->orderBy('criado_em', 'asc')
-            ->paginate($perPage);
+            ->orderBy('criado_em', 'desc'); // Descendente para pegar as mais recentes primeiro
+
+        // Cursor pagination para melhor performance com muitas mensagens
+        if ($cursor) {
+            $query->where('criado_em', '<', $cursor);
+        }
+
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Buscar mensagens mais antigas (para scroll infinito)
+     */
+    public function getOlderMessages($leadId, $beforeTimestamp, $perPage = 20)
+    {
+        return HistoricoConversas::where('lead_id', $leadId)
+            ->where('criado_em', '<', $beforeTimestamp)
+            ->orderBy('criado_em', 'desc')
+            ->limit($perPage)
+            ->get();
     }
 
     /**

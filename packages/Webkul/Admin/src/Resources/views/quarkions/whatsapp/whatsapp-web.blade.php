@@ -106,7 +106,14 @@
                 try {
                     elements.connectionStatus.textContent = 'Carregando...';
                     
-                    const response = await fetch('/api/whatsapp/conversations');
+                    const response = await fetch('/admin/quarkions/whatsapp/conversations', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    });
                     const data = await response.json();
                     
                     if (data.success && Array.isArray(data.conversations)) {
@@ -230,7 +237,7 @@
                 
                 // Zerar contador de não lidas para esta conversa
                 if (conversation.unread_count > 0) {
-                    fetch(`/api/whatsapp/conversations/${conversationId}/mark-read`, {
+                    fetch(`/admin/quarkions/whatsapp/conversations/${conversationId}/mark-read`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -251,7 +258,14 @@
                 try {
                     elements.messagesArea.innerHTML = '<div class="text-center text-gray-500">Carregando mensagens...</div>';
                     
-                    const response = await fetch(`/api/whatsapp/conversations/${conversationId}/messages`);
+                    const response = await fetch(`/admin/quarkions/whatsapp/conversations/${conversationId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    });
                     const data = await response.json();
                     
                     if (data.success && Array.isArray(data.messages)) {
@@ -299,7 +313,7 @@
                 if (!messageText || !state.currentConversation) return;
 
                 try {
-                    const response = await fetch('/api/whatsapp/send', {
+                    const response = await fetch('/admin/quarkions/whatsapp/send-message', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
