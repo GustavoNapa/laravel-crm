@@ -104,7 +104,7 @@
                 <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
                     <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
                         <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
-                            <span v-if="$editingEvent">Editar Agendamento</span>
+                            <span v-if="editingEvent">Editar Agendamento</span>
                             <span v-else>Novo Agendamento</span>
                         </h3>
                         
@@ -381,17 +381,20 @@
                                 this.syncing = false;
                             });
                     }
-                    }
                 }
-                });
-                    } else {
-                        // Retry após 100ms se o app ainda não estiver disponível
-                        setTimeout(registerComponent, 100);
-                    }
-                }
-                
-                registerComponent();
             });
+        } else {
+            // Retry após 100ms se o app ainda não estiver disponível
+            setTimeout(registerComponent, 100);
+        }
+    }
+    
+    // Aguardar DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', registerComponent);
+    } else {
+        registerComponent();
+    }
         </script>
         
         <style>
