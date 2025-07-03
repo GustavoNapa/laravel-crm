@@ -21,29 +21,18 @@
         </div>
 
         <div class="flex items-center gap-x-2.5">
-            <button
-                @click="syncWithGoogle"
-                class="secondary-button"
-                :disabled="syncing"
-            >
-                <span v-if="syncing">Sincronizando...</span>
-                <span v-else>Sincronizar Google</span>
-            </button>
-            
-            <button
-                @click="openCreateModal"
-                class="primary-button"
-            >
-                @lang('admin::app.layouts.add')
-                Agendamento
-            </button>
+            <!-- Buttons moved to Vue component -->
         </div>
     </div>
 
     <!-- Content -->
     <div class="mt-3.5 flex gap-2.5 max-xl:flex-wrap">
         <div class="flex flex-1 flex-col gap-2 max-xl:flex-auto">
-            <quarkions-agenda-calendar></quarkions-agenda-calendar>
+            <quarkions-agenda-calendar 
+                ref="agendaCalendar"
+                @sync-google="syncWithGoogle"
+                @open-create-modal="openCreateModal">
+            </quarkions-agenda-calendar>
         </div>
     </div>
 
@@ -53,6 +42,25 @@
         
         <script type="text/x-template" id="quarkions-agenda-calendar-template">
             <div class="calendar-container">
+                <!-- Header Actions -->
+                <div class="mb-4 flex items-center justify-end gap-x-2.5">
+                    <button
+                        @click="syncWithGoogle"
+                        class="secondary-button"
+                        :disabled="syncing"
+                    >
+                        <span v-if="syncing">Sincronizando...</span>
+                        <span v-else>Sincronizar Google</span>
+                    </button>
+                    
+                    <button
+                        @click="openCreateModal"
+                        class="primary-button"
+                    >
+                        Novo Agendamento
+                    </button>
+                </div>
+            
                 <div class="box-shadow rounded bg-white p-4 dark:bg-gray-900">
                     <!-- Calendar Toolbar -->
                     <div class="mb-4 flex items-center justify-between">
@@ -69,7 +77,7 @@
                         </div>
                         
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
-                            @{{ currentTitle }}
+                            @{{ calendarTitle }}
                         </h2>
                         
                         <div class="flex items-center gap-2">
@@ -171,13 +179,18 @@
         </script>
 
         <script type="module">
-            app.component('quarkions-agenda-calendar', {
-                template: '#quarkions-agenda-calendar-template',
-                
-                data() {
+            // Aguardar que o DOM e o Vue estejam carregados
+            document.addEventListener('DOMContentLoaded', function() {
+                // Tentar registrar o componente com retry
+                function registerComponent() {
+                    if (typeof app !== 'undefined' && app.component) {
+                        app.component('quarkions-agenda-calendar', {
+                            template: '#quarkions-agenda-calendar-template',
+                            
+                            data() {
                     return {
                         calendar: null,
-                        currentTitle: '',
+                        calendarTitle: '',
                         currentView: 'dayGridMonth',
                         showModal: false,
                         editingEvent: null,
@@ -240,7 +253,7 @@
                             },
                             
                             datesSet: (info) => {
-                                this.currentTitle = info.view.title;
+                                this.calendarTitle = info.view.title;
                                 this.currentView = info.view.type;
                             },
                             
@@ -252,7 +265,7 @@
                         });
                         
                         this.calendar.render();
-                        this.currentTitle = this.calendar.view.title;
+                        this.calendarTitle = this.calendar.view.title;
                     },
                     
                     changeView(viewName) {
@@ -370,7 +383,16 @@
                                 this.syncing = false;
                             });
                     }
+                    }
                 }
+                });
+                    } else {
+                        // Retry após 100ms se o app ainda não estiver disponível
+                        setTimeout(registerComponent, 100);
+                    }
+                }
+                
+                registerComponent();
             });
         </script>
         

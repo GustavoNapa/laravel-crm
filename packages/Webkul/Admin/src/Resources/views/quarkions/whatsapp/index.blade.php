@@ -34,7 +34,7 @@
         </div>
     </div>
 
-@push('scripts')
+@pushOnce('scripts')
     <script type="text/x-template" id="quarkions-whatsapp-index-template">
         <div class="whatsapp-container">
             <div class="status-card">
@@ -46,6 +46,11 @@
                         <div class="status-indicator" :class="statusClass">
                             <i :class="statusIcon"></i>
                             <span>@{{ statusText }}</span>
+                        </div>
+                        <div class="mt-2">
+                            <button @click="testWebhook" class="btn btn-sm btn-info">
+                                Testar Webhook
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -62,11 +67,11 @@
                             Carregando conversas...
                         </div>
                         
-                        <div v-else-if="conversas.length === 0" class="text-center text-muted">
+                        <div v-else-if="conversas && conversas.length === 0" class="text-center text-muted">
                             Nenhuma conversa encontrada
                         </div>
                         
-                        <div v-else class="conversation-item" v-for="conversa in conversas" :key="conversa.id">
+                        <div v-else-if="conversas && conversas.length > 0" class="conversation-item" v-for="conversa in conversas" :key="conversa.id">
                             <div class="conversation-header">
                                 <h4>@{{ conversa.lead?.nome || 'Lead não identificado' }}</h4>
                                 <span class="timestamp">@{{ formatDate(conversa.criado_em) }}</span>
@@ -90,16 +95,21 @@
     </script>
 
     <script type="module">
-        app.component('quarkions-whatsapp-index', {
-            template: '#quarkions-whatsapp-index-template',
-            
-            data() {
-                return {
-                    conversas: [],
-                    status: 'disconnected',
-                    loading: false
-                };
-            },
+        // Aguardar que o DOM e o Vue estejam carregados
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tentar registrar o componente com retry
+            function registerComponent() {
+                if (typeof app !== 'undefined' && app.component) {
+                    app.component('quarkions-whatsapp-index', {
+                        template: '#quarkions-whatsapp-index-template',
+                
+                data() {
+                    return {
+                        conversas: [], // Inicializar como array vazio
+                        status: 'disconnected',
+                        loading: false
+                    };
+                },
 
             computed: {
                 statusClass() {
@@ -159,7 +169,7 @@
                 loadConversas() {
                     this.loading = true;
                     
-                    fetch("{{ route('admin.quarkions.whatsapp.index') }}", {
+                    fetch("{{ route('admin.quarkions.whatsapp.conversations') }}", {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
@@ -169,11 +179,12 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        this.conversas = data.data || [];
+                        console.log('Dados recebidos:', data); // Debug
+                        this.conversas = Array.isArray(data.data) ? data.data : [];
                     })
                     .catch(error => {
                         console.error('Erro ao carregar conversas:', error);
-                        this.conversas = [];
+                        this.conversas = []; // Garantir que seja sempre um array
                     })
                     .finally(() => {
                         this.loading = false;
@@ -199,14 +210,43 @@
                     });
                 },
 
+                testWebhook() {
+                    fetch("{{ route('admin.quarkions.whatsapp.test-webhook') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.getCsrfToken()
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Resultado do teste de webhook:', data);
+                        alert('Teste de webhook executado! Verifique o console para detalhes.');
+                        // Recarregar conversas para ver se a mensagem de teste aparece
+                        this.loadConversas();
+                    })
+                    .catch(error => {
+                        console.error('Erro no teste de webhook:', error);
+                        alert('Erro no teste de webhook: ' + error.message);
+                    });
+                },
+
                 chatUrl(leadId) {
                     return "{{ route('admin.quarkions.whatsapp.chat', ':leadId') }}".replace(':leadId', leadId);
                 },
 
                 formatDate(date) {
                     return new Date(date).toLocaleString('pt-BR');
+                }                }
+                });
+                } else {
+                    // Retry após 100ms se o app ainda não estiver disponível
+                    setTimeout(registerComponent, 100);
                 }
             }
+            
+            registerComponent();
         });
     </script>
 
@@ -246,6 +286,6 @@
             color: #6c757d;
         }
     </style>
-@endpush
+@endPushOnce
 
 </x-admin::layouts>

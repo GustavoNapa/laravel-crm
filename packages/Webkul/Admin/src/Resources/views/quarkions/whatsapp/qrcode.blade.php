@@ -74,7 +74,7 @@
                                 Timeout
                             </h3>
                             <p class="mt-2 text-gray-600 dark:text-gray-300">
-                                {{ timeoutMessage }}
+                                @{{ timeoutMessage }}
                             </p>
                             <button @click="tryAgain" class="mt-4 primary-button">
                                 Tentar Novamente
