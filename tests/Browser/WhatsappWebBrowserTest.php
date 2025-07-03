@@ -16,10 +16,10 @@ class WhatsappWebBrowserTest extends DuskTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Criar usuário para testes
         $this->user = User::factory()->create([
-            'email' => 'admin@example.com',
+            'email'    => 'admin@example.com',
             'password' => bcrypt('admin123'),
         ]);
     }
@@ -105,12 +105,12 @@ class WhatsappWebBrowserTest extends DuskTestCase
 
             // Verificar se não há erros críticos no console
             $logs = $browser->driver->manage()->getLog('browser');
-            $errors = array_filter($logs, function($log) {
-                return $log['level'] === 'SEVERE' && 
+            $errors = array_filter($logs, function ($log) {
+                return $log['level'] === 'SEVERE' &&
                        strpos($log['message'], 'Cannot read properties of undefined') !== false;
             });
 
-            $this->assertEmpty($errors, 'JavaScript errors found: ' . json_encode($errors));
+            $this->assertEmpty($errors, 'JavaScript errors found: '.json_encode($errors));
         });
     }
 
@@ -165,15 +165,14 @@ class WhatsappWebBrowserTest extends DuskTestCase
 
             // Testar endpoint de conversas
             $response = $browser->visit('/admin/quarkions/whatsapp/conversations');
-            
+
             // Verificar se retorna JSON válido
             $content = $browser->driver->getPageSource();
             $this->assertJson($content);
-            
+
             $data = json_decode($content, true);
             $this->assertArrayHasKey('success', $data);
             $this->assertArrayHasKey('conversations', $data);
         });
     }
 }
-

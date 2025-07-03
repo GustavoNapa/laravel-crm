@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 use Webkul\User\Models\User;
 
 class WhatsappWebTest extends TestCase
@@ -15,21 +15,21 @@ class WhatsappWebTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Criar role primeiro
         $role = \Webkul\User\Models\Role::create([
-            'name' => 'Administrator',
-            'description' => 'Administrator role',
+            'name'            => 'Administrator',
+            'description'     => 'Administrator role',
             'permission_type' => 'all',
         ]);
-        
+
         // Criar usuário para testes
         $this->user = User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'name'     => 'Admin User',
+            'email'    => 'admin@example.com',
             'password' => bcrypt('admin123'),
-            'status' => 1,
-            'role_id' => $role->id,
+            'status'   => 1,
+            'role_id'  => $role->id,
         ]);
     }
 
@@ -62,9 +62,9 @@ class WhatsappWebTest extends TestCase
                     'lastMessageTime',
                     'unreadCount',
                     'isGroup',
-                    'remoteJid'
-                ]
-            ]
+                    'remoteJid',
+                ],
+            ],
         ]);
     }
 
@@ -81,9 +81,9 @@ class WhatsappWebTest extends TestCase
         $response->assertJsonStructure([
             'success',
             'message',
-            'conversations'
+            'conversations',
         ]);
-        
+
         $this->assertFalse($response->json('success'));
         $this->assertEquals([], $response->json('conversations'));
     }
@@ -98,7 +98,7 @@ class WhatsappWebTest extends TestCase
         $response->assertJsonStructure([
             'success',
             'conversations',
-            'total'
+            'total',
         ]);
     }
 
@@ -119,13 +119,13 @@ class WhatsappWebTest extends TestCase
             ->get('/admin/quarkions/whatsapp');
 
         $content = $response->getContent();
-        
+
         // Verificar se contém elementos Vue necessários
         $this->assertStringContainsString('id="whatsapp-web-app"', $content);
         $this->assertStringContainsString('v-for="conversation in (whatsapp ? whatsapp.conversations : [])"', $content);
         $this->assertStringContainsString('v-if="loading"', $content);
         $this->assertStringContainsString('@click="selectConversation(conversation)"', $content);
-        
+
         // Verificar se contém scripts necessários
         $this->assertStringContainsString('initWhatsappInbox', $content);
         $this->assertStringContainsString('loadConversations', $content);
@@ -138,7 +138,7 @@ class WhatsappWebTest extends TestCase
         $conversationsResponse = $this->actingAs($this->user)
             ->get('/admin/quarkions/whatsapp/conversations');
 
-        if ($conversationsResponse->json('success') && !empty($conversationsResponse->json('conversations'))) {
+        if ($conversationsResponse->json('success') && ! empty($conversationsResponse->json('conversations'))) {
             $firstConversation = $conversationsResponse->json('conversations')[0];
             $conversationId = $firstConversation['id'];
 
@@ -148,7 +148,7 @@ class WhatsappWebTest extends TestCase
             $response->assertStatus(200);
             $response->assertJsonStructure([
                 'success',
-                'messages'
+                'messages',
             ]);
         } else {
             $this->markTestSkipped('Nenhuma conversa disponível para teste');
@@ -167,8 +167,7 @@ class WhatsappWebTest extends TestCase
     /** @test */
     public function whatsapp_service_can_be_instantiated()
     {
-        $service = new \App\Services\EvolutionChatService();
+        $service = new \App\Services\EvolutionChatService;
         $this->assertInstanceOf(\App\Services\EvolutionChatService::class, $service);
     }
 }
-

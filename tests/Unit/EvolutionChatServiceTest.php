@@ -2,10 +2,10 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
 use App\Services\EvolutionChatService;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
 
 class EvolutionChatServiceTest extends TestCase
 {
@@ -14,13 +14,13 @@ class EvolutionChatServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Configurar valores de teste
         Config::set('whatsapp.evolution_base_url', 'https://test-api.com');
         Config::set('whatsapp.evolution_token', 'test-token');
         Config::set('whatsapp.instance_name', 'test-instance');
-        
-        $this->service = new EvolutionChatService();
+
+        $this->service = new EvolutionChatService;
     }
 
     /** @test */
@@ -35,17 +35,17 @@ class EvolutionChatServiceTest extends TestCase
         // Mock da resposta da API
         $mockResponse = [
             'success' => true,
-            'data' => [
+            'data'    => [
                 [
-                    'id' => 'chat1',
-                    'name' => 'Test Chat',
+                    'id'          => 'chat1',
+                    'name'        => 'Test Chat',
                     'lastMessage' => 'Hello',
-                ]
-            ]
+                ],
+            ],
         ];
 
         Http::fake([
-            'https://test-api.com/chat/findChats/test-instance' => Http::response($mockResponse, 200)
+            'https://test-api.com/chat/findChats/test-instance' => Http::response($mockResponse, 200),
         ]);
 
         $result = $this->service->findChats();
@@ -57,7 +57,7 @@ class EvolutionChatServiceTest extends TestCase
     public function it_handles_api_errors_gracefully()
     {
         Http::fake([
-            'https://test-api.com/chat/findChats/test-instance' => Http::response([], 500)
+            'https://test-api.com/chat/findChats/test-instance' => Http::response([], 500),
         ]);
 
         $result = $this->service->findChats();
@@ -71,7 +71,7 @@ class EvolutionChatServiceTest extends TestCase
         Http::fake([
             'https://test-api.com/chat/findChats/test-instance' => function () {
                 throw new \Exception('Network error');
-            }
+            },
         ]);
 
         $result = $this->service->findChats();
@@ -84,22 +84,22 @@ class EvolutionChatServiceTest extends TestCase
     {
         $mockChats = [
             [
-                'id' => 'chat1',
-                'name' => 'Test User',
+                'id'          => 'chat1',
+                'name'        => 'Test User',
                 'lastMessage' => [
-                    'message' => 'Hello World',
-                    'timestamp' => '2025-07-03T14:30:00Z'
+                    'message'   => 'Hello World',
+                    'timestamp' => '2025-07-03T14:30:00Z',
                 ],
                 'unreadCount' => 5,
-                'isGroup' => false
-            ]
+                'isGroup'     => false,
+            ],
         ];
 
         $result = $this->service->formatConversationData($mockChats);
 
         $this->assertIsArray($result);
         $this->assertCount(1, $result);
-        
+
         $conversation = $result[0];
         $this->assertEquals('chat1', $conversation['id']);
         $this->assertEquals('Test User', $conversation['name']);
@@ -112,7 +112,7 @@ class EvolutionChatServiceTest extends TestCase
     public function it_handles_empty_chat_data()
     {
         $result = $this->service->formatConversationData([]);
-        
+
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
@@ -127,7 +127,7 @@ class EvolutionChatServiceTest extends TestCase
         ];
 
         $result = $this->service->formatConversationData($malformedData);
-        
+
         $this->assertIsArray($result);
         // Deve filtrar dados inválidos e retornar apenas dados válidos
     }
@@ -162,18 +162,18 @@ class EvolutionChatServiceTest extends TestCase
     {
         $mockMessages = [
             [
-                'id' => 'msg1',
-                'message' => 'Hello',
+                'id'        => 'msg1',
+                'message'   => 'Hello',
                 'timestamp' => '2025-07-03T14:30:00Z',
-                'fromMe' => false
-            ]
+                'fromMe'    => false,
+            ],
         ];
 
         Http::fake([
             'https://test-api.com/chat/findMessages/test-instance' => Http::response([
                 'success' => true,
-                'data' => $mockMessages
-            ], 200)
+                'data'    => $mockMessages,
+            ], 200),
         ]);
 
         $result = $this->service->getConversationHistory('chat1');
@@ -186,9 +186,9 @@ class EvolutionChatServiceTest extends TestCase
     {
         Http::fake([
             'https://test-api.com/message/sendText/test-instance' => Http::response([
-                'success' => true,
-                'messageId' => 'msg123'
-            ], 200)
+                'success'   => true,
+                'messageId' => 'msg123',
+            ], 200),
         ]);
 
         $result = $this->service->sendMessage('chat1', 'Hello World');
@@ -201,9 +201,8 @@ class EvolutionChatServiceTest extends TestCase
     public function it_validates_required_configuration()
     {
         Config::set('whatsapp.evolution_base_url', '');
-        
+
         $this->expectException(\Exception::class);
-        new EvolutionChatService();
+        new EvolutionChatService;
     }
 }
-
