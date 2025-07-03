@@ -93,10 +93,10 @@
                 </div>
                 
                 <!-- Modal de Criação/Edição -->
-                <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div class="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800">
+                <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+                    <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
                         <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
-                            <span v-if="editingEvent">Editar Agendamento</span>
+                            <span v-if="$editingEvent">Editar Agendamento</span>
                             <span v-else>Novo Agendamento</span>
                         </h3>
                         

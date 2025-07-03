@@ -22,8 +22,8 @@ Route::group([
     /**
      * WhatsApp routes
      */
-    Route::get('/whatsapp', [QuarkionsController::class, 'whatsappIndex'])->name('admin.quarkions.whatsapp.index');
-    Route::get('/whatsapp/web', [QuarkionsController::class, 'whatsappWeb'])->name('admin.quarkions.whatsapp.web');
+    Route::get('/whatsapp', [QuarkionsController::class, 'whatsappWeb'])->name('admin.quarkions.whatsapp.index');
+    Route::get('/whatsapp/inbox', [QuarkionsController::class, 'whatsappIndex'])->name('admin.quarkions.whatsapp.inbox');
     Route::get('/whatsapp/chat/{leadId}', [QuarkionsController::class, 'whatsappChat'])->name('admin.quarkions.whatsapp.chat');
     Route::get('/whatsapp/qrcode', [QuarkionsController::class, 'whatsappQrCode'])->name('admin.quarkions.whatsapp.qrcode');
     Route::get('/whatsapp/configuration', [QuarkionsController::class, 'whatsappConfiguration'])->name('admin.quarkions.whatsapp.configuration');
