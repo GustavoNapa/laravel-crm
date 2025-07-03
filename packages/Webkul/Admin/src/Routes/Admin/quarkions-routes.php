@@ -29,11 +29,13 @@ Route::group([
     Route::get('/whatsapp/configuration', [QuarkionsController::class, 'whatsappConfiguration'])->name('admin.quarkions.whatsapp.configuration');
     Route::get('/whatsapp/status', [QuarkionsController::class, 'whatsappGetStatus'])->name('admin.quarkions.whatsapp.status');
     Route::get('/whatsapp/test-connection', [QuarkionsController::class, 'whatsappTestConnection'])->name('admin.quarkions.whatsapp.test-connection');
+    Route::post('/whatsapp/test-webhook', [QuarkionsController::class, 'whatsappTestWebhook'])->name('admin.quarkions.whatsapp.test-webhook');
     Route::post('/whatsapp/webhook', [QuarkionsController::class, 'whatsappWebhook'])->name('admin.quarkions.whatsapp.webhook');
     
     // WhatsApp Web API endpoints
     Route::get('/whatsapp/conversations', [QuarkionsController::class, 'whatsappConversations'])->name('admin.quarkions.whatsapp.conversations');
     Route::get('/whatsapp/conversations/{id}', [QuarkionsController::class, 'whatsappConversationHistory'])->name('admin.quarkions.whatsapp.conversation.history');
+    Route::get('/whatsapp/messages/{id}', [QuarkionsController::class, 'whatsappMessages'])->name('admin.quarkions.whatsapp.messages');
     Route::post('/whatsapp/send-message', [QuarkionsController::class, 'whatsappSendMessage'])->name('admin.quarkions.whatsapp.send-message');
     Route::post('/whatsapp/conversations/{id}/mark-read', [QuarkionsController::class, 'whatsappMarkAsRead'])->name('admin.quarkions.whatsapp.mark-read');
     Route::patch('/whatsapp/conversations/{id}/status', [QuarkionsController::class, 'whatsappUpdateStatus'])->name('admin.quarkions.whatsapp.update-status');
@@ -42,6 +44,8 @@ Route::group([
      * Agentes IA routes
      */
     Route::get('/agentes', [QuarkionsController::class, 'agentesIndex'])->name('admin.quarkions.agentes.index');
+    Route::get('/agentes/create', [QuarkionsController::class, 'agentesCreate'])->name('admin.quarkions.agentes.create');
+    Route::get('/agentes/dashboard', [QuarkionsController::class, 'agentesDashboard'])->name('admin.quarkions.agentes.dashboard');
     Route::post('/agentes', [QuarkionsController::class, 'agentesStore'])->name('admin.quarkions.agentes.store');
     Route::put('/agentes/{id}', [QuarkionsController::class, 'agentesUpdate'])->name('admin.quarkions.agentes.update');
     Route::delete('/agentes/{id}', [QuarkionsController::class, 'agentesDestroy'])->name('admin.quarkions.agentes.destroy');

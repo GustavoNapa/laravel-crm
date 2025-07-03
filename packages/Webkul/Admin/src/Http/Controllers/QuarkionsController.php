@@ -423,6 +423,14 @@ class QuarkionsController extends Controller
     }
 
     /**
+     * Obter mensagens de uma conversa específica (alias para whatsappConversationHistory)
+     */
+    public function whatsappMessages($id, Request $request)
+    {
+        return $this->whatsappConversationHistory($id, $request);
+    }
+
+    /**
      * Enviar mensagem WhatsApp usando Evolution API
      */
     public function whatsappSendMessage(Request $request)
@@ -459,31 +467,6 @@ class QuarkionsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao enviar mensagem: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Verificar status da conexão WhatsApp usando Evolution API
-     */
-    public function whatsappGetStatus()
-    {
-        try {
-            $evolutionService = new \App\Services\EvolutionChatService();
-            $status = $evolutionService->getConnectionStatus();
-            
-            return response()->json([
-                'success' => true,
-                'status' => $status['status'],
-                'data' => $status['data']
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('WhatsApp status error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'status' => 'error',
-                'message' => $e->getMessage()
             ], 500);
         }
     }
