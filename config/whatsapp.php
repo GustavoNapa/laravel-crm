@@ -10,7 +10,7 @@ return [
     |
     */
 
-    'evolution_base_url' => env('EVOLUTION_BASE_URL', 'https://evolution-api.com'),
+    'evolution_base_url' => env('EVOLUTION_BASE_URL', 'http://localhost:8080'),
     'evolution_token' => env('EVOLUTION_TOKEN', ''),
     'instance_name' => env('WHATSAPP_INSTANCE_NAME', 'quarkions_instance'),
 

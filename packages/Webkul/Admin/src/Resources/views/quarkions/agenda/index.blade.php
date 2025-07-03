@@ -69,7 +69,7 @@
                         </div>
                         
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
-                            {{ currentTitle }}
+                            @{{ currentTitle }}
                         </h2>
                         
                         <div class="flex items-center gap-2">

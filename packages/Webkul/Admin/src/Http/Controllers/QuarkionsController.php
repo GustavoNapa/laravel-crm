@@ -5,7 +5,9 @@ namespace Webkul\Admin\Http\Controllers;
 use App\Services\WhatsAppService;
 use App\Repositories\WhatsappConversationRepository;
 use App\Services\EvolutionSessionService;
+use App\Http\Controllers\AgentesController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\Agenda;
 use App\Models\LeadQuarkions;
 use App\Services\GoogleCalendarSyncService;
@@ -17,17 +19,20 @@ class QuarkionsController extends Controller
     protected $googleCalendarService;
     protected $conversationRepository;
     protected $evolutionService;
+    protected $agentesController;
 
     public function __construct(
         WhatsAppService $whatsappService,
         GoogleCalendarSyncService $googleCalendarService,
         WhatsappConversationRepository $conversationRepository,
-        EvolutionSessionService $evolutionService
+        EvolutionSessionService $evolutionService,
+        AgentesController $agentesController
     ) {
         $this->whatsappService = $whatsappService;
         $this->googleCalendarService = $googleCalendarService;
         $this->conversationRepository = $conversationRepository;
         $this->evolutionService = $evolutionService;
+        $this->agentesController = $agentesController;
     }
 
     /**
@@ -219,7 +224,7 @@ class QuarkionsController extends Controller
      */
     public function whatsappIndex()
     {
-        return view('admin::quarkions.whatsapp.inbox');
+        return view('admin::quarkions.whatsapp.basic-inbox');
     }
 
     public function whatsappChat($leadId)
@@ -236,13 +241,13 @@ class QuarkionsController extends Controller
     {
         try {
             $data = $request->all();
-            \Log::info('WhatsApp Webhook recebido:', $data);
+            Log::info('WhatsApp Webhook recebido:', $data);
             
             $result = $this->evolutionService->processWebhook($data);
             
             return response()->json($result, $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
-            \Log::error('Erro no webhook WhatsApp: ' . $e->getMessage());
+            Log::error('Erro no webhook WhatsApp: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Erro interno'
@@ -252,12 +257,23 @@ class QuarkionsController extends Controller
 
     public function whatsappCreateInstance(Request $request)
     {
-        return $this->whatsappController->createInstance($request);
+        try {
+            $result = $this->evolutionService->createInstance();
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function whatsappSetWebhook(Request $request)
     {
-        return $this->whatsappController->setWebhook($request);
+        try {
+            $webhookUrl = $request->get('webhook_url');
+            $result = $this->evolutionService->setWebhook($webhookUrl);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function whatsappGetStatus()

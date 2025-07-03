@@ -4,6 +4,29 @@ use Illuminate\Support\Facades\Route;
 use Webkul\Admin\Http\Controllers\QuarkionsController;
 
 /**
+ * Simple test route
+ */
+Route::get('test-quarkions', function() {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Quarkions routes estão funcionando',
+        'timestamp' => now()
+    ]);
+})->name('admin.test.quarkions');
+
+/**
+ * Test WhatsApp controller
+ */
+Route::get('test-whatsapp-controller', [QuarkionsController::class, 'whatsappIndex'])->name('admin.test.whatsapp.controller');
+
+/**
+ * Simple WhatsApp test without Vue
+ */
+Route::get('test-whatsapp-simple', function() {
+    return view('admin::quarkions.whatsapp.simple-test');
+})->name('admin.test.whatsapp.simple');
+
+/**
  * Quarkions routes.
  */
 Route::group(['middleware' => ['user']], function () {

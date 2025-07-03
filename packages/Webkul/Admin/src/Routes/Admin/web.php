@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 /**
  * Auth routes.
  */
@@ -49,6 +51,17 @@ require 'configuration-routes.php';
  * Quarkions routes.
  */
 require 'quarkions-routes.php';
+
+/**
+ * Test route for debugging
+ */
+Route::get('test-whatsapp', function() {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Rota de teste funcionando',
+        'timestamp' => now()
+    ]);
+})->name('admin.test.whatsapp');
 
 /**
  * Rest routes.

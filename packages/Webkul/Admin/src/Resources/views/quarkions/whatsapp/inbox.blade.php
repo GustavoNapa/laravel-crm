@@ -47,14 +47,14 @@
                         :class="activeFilter === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
                         class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
                     >
-                        Todas ({{ stats.total_conversations || 0 }})
+                        Todas (@{{ stats.total_conversations || 0 }})
                     </button>
                     <button 
                         @click="setFilter('unread')"
                         :class="activeFilter === 'unread' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'"
                         class="px-3 py-1 rounded-full text-xs font-medium transition-colors"
                     >
-                        Não lidas ({{ stats.unread_messages || 0 }})
+                        Não lidas (@{{ stats.unread_messages || 0 }})
                     </button>
                 </div>
             </div>
@@ -87,10 +87,10 @@
                             <!-- Avatar -->
                             <div class="relative">
                                 <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                    {{ getInitials(conversation.lead?.nome || 'U') }}
+                                    @{{ getInitials(conversation.lead?.nome || 'U') }}
                                 </div>
                                 <div v-if="conversation.unread_count > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold">
-                                    {{ conversation.unread_count > 9 ? '9+' : conversation.unread_count }}
+                                    @{{ conversation.unread_count > 9 ? '9+' : conversation.unread_count }}
                                 </div>
                             </div>
 
@@ -98,15 +98,15 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between">
                                     <h3 class="text-sm font-medium text-gray-900 truncate">
-                                        {{ conversation.lead?.nome || 'Usuário' }}
+                                        @{{ conversation.lead?.nome || 'Usuário' }}
                                     </h3>
                                     <span class="text-xs text-gray-500">
-                                        {{ formatTime(conversation.last_message_at) }}
+                                        @{{ formatTime(conversation.last_message_at) }}
                                     </span>
                                 </div>
                                 <div class="flex items-center justify-between mt-1">
                                     <p class="text-sm text-gray-600 truncate">
-                                        {{ conversation.mensagem || 'Sem mensagens' }}
+                                        @{{ conversation.mensagem || 'Sem mensagens' }}
                                     </p>
                                     <div class="flex items-center space-x-1">
                                         <span v-if="conversation.lead?.status === 'ativo'" class="w-2 h-2 bg-green-400 rounded-full"></span>
@@ -139,11 +139,11 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                {{ getInitials(selectedConversation.lead?.nome || 'U') }}
+                                @{{ getInitials(selectedConversation.lead?.nome || 'U') }}
                             </div>
                             <div>
-                                <h3 class="text-lg font-medium text-gray-900">{{ selectedConversation.lead?.nome || 'Usuário' }}</h3>
-                                <p class="text-sm text-gray-500">{{ selectedConversation.lead?.telefone }}</p>
+                                <h3 class="text-lg font-medium text-gray-900">@{{ selectedConversation.lead?.nome || 'Usuário' }}</h3>
+                                <p class="text-sm text-gray-500">@{{ selectedConversation.lead?.telefone }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -178,8 +178,8 @@
                     <div v-else-if="messages.length > 0">
                         <div v-for="message in messages" :key="message.id" class="flex" :class="message.tipo === 'enviada' ? 'justify-end' : 'justify-start'">
                             <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg" :class="message.tipo === 'enviada' ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'">
-                                <p class="text-sm">{{ message.mensagem }}</p>
-                                <p class="text-xs mt-1 opacity-70">{{ formatTime(message.created_at) }}</p>
+                                <p class="text-sm">@{{ message.mensagem }}</p>
+                                <p class="text-xs mt-1 opacity-70">@{{ formatTime(message.created_at) }}</p>
                             </div>
                         </div>
                     </div>
@@ -306,7 +306,7 @@
                                 unread_only: this.activeFilter === 'unread' ? '1' : '0'
                             });
 
-                            const response = await fetch(`{{ route('admin.quarkions.whatsapp.conversations') }}?${params}`, {
+                            const response = await fetch(`/admin/quarkions/whatsapp/conversations?${params}`, {
                                 method: 'GET',
                                 headers: {
                                     'Accept': 'application/json',
@@ -336,7 +336,7 @@
                             this.loadingMessages = true;
                             this.messages = [];
 
-                            const response = await fetch(`{{ route('admin.quarkions.whatsapp.conversation.history', ':id') }}`.replace(':id', conversation.lead_id), {
+                            const response = await fetch(`/admin/quarkions/whatsapp/conversations/${conversation.lead_id}`, {
                                 method: 'GET',
                                 headers: {
                                     'Accept': 'application/json',
@@ -371,7 +371,7 @@
                         try {
                             this.sendingMessage = true;
 
-                            const response = await fetch(`{{ route('admin.quarkions.whatsapp.send-message') }}`, {
+                            const response = await fetch(`/admin/quarkions/whatsapp/send-message`, {
                                 method: 'POST',
                                 headers: {
                                     'Accept': 'application/json',
@@ -405,7 +405,7 @@
 
                     async checkStatus() {
                         try {
-                            const response = await fetch(`{{ route('admin.quarkions.whatsapp.status') }}`, {
+                            const response = await fetch(`/admin/quarkions/whatsapp/status`, {
                                 method: 'GET',
                                 headers: {
                                     'Accept': 'application/json',
@@ -426,7 +426,7 @@
                         if (!this.selectedConversation) return;
 
                         try {
-                            const response = await fetch(`{{ route('admin.quarkions.whatsapp.update-status', ':id') }}`.replace(':id', this.selectedConversation.lead_id), {
+                            const response = await fetch(`/admin/quarkions/whatsapp/conversations/${this.selectedConversation.lead_id}/status`, {
                                 method: 'PATCH',
                                 headers: {
                                     'Accept': 'application/json',
