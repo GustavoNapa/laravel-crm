@@ -5,7 +5,11 @@
 
     <div class="h-screen bg-gray-100 overflow-hidden">
         <!-- WhatsApp Web Container -->
-        <div class="flex h-full bg-white" id="whatsapp-web-app">
+        <whatsapp-web></whatsapp-web>
+    </div>
+
+    <script type="text/x-template" id="whatsapp-web-template">
+        <div class="flex h-full bg-white">
             <!-- Sidebar -->
             <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
                 <!-- Header -->
@@ -253,12 +257,12 @@
                 </div>
             </div>
         </div>
-    </div>
+    </script>
 
     <script type="module">
-        const { createApp } = Vue;
-
-        createApp({
+        // Usar a instância global do Vue
+        window.app.component('whatsapp-web', {
+            template: '#whatsapp-web-template',
             data() {
                 return {
                     conversations: [],
@@ -536,7 +540,7 @@
                     });
                 }
             }
-        }).mount('#whatsapp-web-app');
+        });
     </script>
 </x-admin::layouts>
 
