@@ -106,7 +106,7 @@
                 try {
                     elements.connectionStatus.textContent = 'Carregando...';
                     
-                    const response = await fetch('/admin/quarkions/whatsapp/conversations');
+                    const response = await fetch('/api/whatsapp/conversations');
                     const data = await response.json();
                     
                     if (data.success && Array.isArray(data.conversations)) {
@@ -142,17 +142,27 @@
                     <div class="conversation-item p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50" 
                          data-conversation-id="${conversation.id || conversation.remoteJid}">
                         <div class="flex items-center">
-                            <div class="w-12 h-12 bg-gray-300 rounded-full mr-3 flex items-center justify-center">
-                                <span class="text-gray-600 font-semibold">
-                                    ${(conversation.name || conversation.pushName || conversation.remoteJid || 'N/A').charAt(0).toUpperCase()}
-                                </span>
+                            <div class="relative w-12 h-12 mr-3">
+                                ${conversation.profile_photo ? 
+                                    `<img src="${conversation.profile_photo}" alt="Profile" class="w-12 h-12 rounded-full object-cover">` :
+                                    `<div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                                        <span class="text-gray-600 font-semibold">
+                                            ${(conversation.name || conversation.pushName || conversation.remoteJid || 'N/A').charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>`
+                                }
+                                ${conversation.unread_count > 0 ? 
+                                    `<div class="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        ${conversation.unread_count > 99 ? '99+' : conversation.unread_count}
+                                    </div>` : ''
+                                }
                             </div>
                             <div class="flex-1">
                                 <h4 class="font-semibold text-gray-900">
                                     ${conversation.name || conversation.pushName || conversation.remoteJid || 'Contato sem nome'}
                                 </h4>
                                 <p class="text-sm text-gray-500 truncate">
-                                    ${conversation.lastMessage || 'Sem mensagens'}
+                                    ${conversation.last_message || 'Sem mensagens'}
                                 </p>
                             </div>
                             <div class="text-xs text-gray-400">
@@ -183,9 +193,27 @@
 
                 state.currentConversation = conversation;
                 
-                // Atualizar header do chat
-                elements.chatContactName.textContent = conversation.name || conversation.pushName || conversation.remoteJid || 'Contato';
-                elements.chatContactStatus.textContent = 'Online';
+                // Atualizar header do chat com foto de perfil
+                const chatHeaderHtml = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 mr-3">
+                            ${conversation.profile_photo ? 
+                                `<img src="${conversation.profile_photo}" alt="Profile" class="w-10 h-10 rounded-full object-cover">` :
+                                `<div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                    <span class="text-gray-600 font-semibold">
+                                        ${(conversation.name || conversation.pushName || conversation.remoteJid || 'Contato').charAt(0).toUpperCase()}
+                                    </span>
+                                </div>`
+                            }
+                        </div>
+                        <div>
+                            <h3 id="chat-contact-name" class="font-semibold">${conversation.name || conversation.pushName || conversation.remoteJid || 'Contato'}</h3>
+                            <p id="chat-contact-status" class="text-sm text-gray-500">Online</p>
+                        </div>
+                    </div>
+                `;
+                
+                elements.chatHeader.innerHTML = chatHeaderHtml;
                 
                 // Mostrar área do chat
                 elements.chatHeader.classList.remove('hidden');
@@ -199,6 +227,23 @@
                     item.classList.remove('bg-green-100');
                 });
                 document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('bg-green-100');
+                
+                // Zerar contador de não lidas para esta conversa
+                if (conversation.unread_count > 0) {
+                    fetch(`/api/whatsapp/conversations/${conversationId}/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    }).then(() => {
+                        // Atualizar contador localmente
+                        conversation.unread_count = 0;
+                        renderConversations(state.conversations);
+                    }).catch(error => {
+                        console.error('Error marking conversation as read:', error);
+                    });
+                }
             }
 
             // Carregar mensagens
@@ -206,7 +251,7 @@
                 try {
                     elements.messagesArea.innerHTML = '<div class="text-center text-gray-500">Carregando mensagens...</div>';
                     
-                    const response = await fetch(`/admin/quarkions/whatsapp/messages/${conversationId}`);
+                    const response = await fetch(`/api/whatsapp/conversations/${conversationId}/messages`);
                     const data = await response.json();
                     
                     if (data.success && Array.isArray(data.messages)) {
@@ -254,7 +299,7 @@
                 if (!messageText || !state.currentConversation) return;
 
                 try {
-                    const response = await fetch('/admin/quarkions/whatsapp/send', {
+                    const response = await fetch('/api/whatsapp/send', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -272,6 +317,8 @@
                         elements.messageInput.value = '';
                         // Recarregar mensagens
                         loadMessages(state.currentConversation.id || state.currentConversation.remoteJid);
+                        // Recarregar conversas para atualizar última mensagem
+                        loadConversations();
                     } else {
                         alert('Erro ao enviar mensagem: ' + (data.message || 'Erro desconhecido'));
                     }
@@ -298,10 +345,81 @@
                 renderConversations(filteredConversations);
             });
 
+            // Configurar Echo para broadcast em tempo real
+            function setupEcho() {
+                if (typeof Echo !== 'undefined') {
+                    // Escutar mensagens globais do WhatsApp
+                    Echo.channel('whatsapp-messages')
+                        .listen('MessageCreated', (e) => {
+                            console.log('Nova mensagem recebida:', e);
+                            
+                            // Atualizar lista de conversas
+                            loadConversations();
+                            
+                            // Se a conversa atual é a que recebeu a mensagem, recarregar mensagens
+                            if (state.currentConversation && 
+                                state.currentConversation.id === e.message.lead_id) {
+                                loadMessages(state.currentConversation.id);
+                            }
+                        });
+
+                    // Escutar mensagens específicas da conversa atual
+                    function listenToConversation(conversationId) {
+                        if (state.conversationChannel) {
+                            Echo.leave(state.conversationChannel);
+                        }
+                        
+                        state.conversationChannel = `conversation.${conversationId}`;
+                        Echo.private(state.conversationChannel)
+                            .listen('MessageCreated', (e) => {
+                                console.log('Mensagem na conversa atual:', e);
+                                
+                                // Adicionar mensagem à lista atual
+                                if (state.messages) {
+                                    const newMessage = {
+                                        id: e.message.id,
+                                        body: e.message.mensagem,
+                                        fromMe: e.message.tipo === 'enviada',
+                                        messageTimestamp: new Date(e.message.criado_em).getTime() / 1000,
+                                        message: {
+                                            conversation: e.message.mensagem
+                                        },
+                                        key: {
+                                            fromMe: e.message.tipo === 'enviada'
+                                        }
+                                    };
+                                    
+                                    state.messages.push(newMessage);
+                                    renderMessages(state.messages);
+                                }
+                                
+                                // Zerar contador de não lidas se a janela está ativa
+                                if (document.hasFocus() && state.currentConversation) {
+                                    const conversation = state.conversations.find(c => c.id === conversationId);
+                                    if (conversation) {
+                                        conversation.unread_count = 0;
+                                        renderConversations(state.conversations);
+                                    }
+                                }
+                            });
+                    }
+                    
+                    // Adicionar listener para quando uma conversa é selecionada
+                    const originalSelectConversation = selectConversation;
+                    selectConversation = function(conversationId) {
+                        originalSelectConversation(conversationId);
+                        listenToConversation(conversationId);
+                    };
+                } else {
+                    console.warn('Echo não está disponível. Broadcast em tempo real não funcionará.');
+                }
+            }
+
             // Inicializar
             loadConversations();
+            setupEcho();
             
-            // Atualizar conversas a cada 30 segundos
+            // Atualizar conversas a cada 30 segundos (fallback se Echo não estiver funcionando)
             setInterval(loadConversations, 30000);
         });
     </script>

@@ -19,11 +19,19 @@ class LeadQuarkions extends Model
         'status',
         'origem',
         'cliente_id',
+        'profile_photo',
+        'whatsapp_wuid',
+        'profile_photo_sync_attempted',
+        'profile_photo_sync_error',
+        'last_message',
+        'last_message_timestamp',
+        'last_message_from_me',
+        'unread_count',
     ];
 
     public $timestamps = false;
 
-    protected $dates = ['criado_em'];
+    protected $dates = ['criado_em', 'profile_photo_sync_attempted', 'last_message_timestamp'];
 
     const CREATED_AT = 'criado_em';
 

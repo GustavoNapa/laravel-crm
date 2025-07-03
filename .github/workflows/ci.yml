@@ -35,8 +35,17 @@ jobs:
           ini-values: error_reporting=E_ALL
           tools: composer:v2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
       - name: Running Composer Install
         run: composer install
+
+      - name: Running NPM Install
+        run: npm install
 
       - name: Set Testing Environment
         run: |
@@ -48,8 +57,24 @@ jobs:
           sed -i "s|^\(DB_USERNAME=\s*\).*$|\1root|" .env
           sed -i "s|^\(DB_PASSWORD=\s*\).*$|\1root|" .env
 
+      - name: Set WhatsApp Environment Variables
+        run: |
+          echo "EVOLUTION_API_KEY=${{ secrets.EVOLUTION_API_KEY }}" >> .env
+          echo "EVOLUTION_BASE_URL=https://evolution-api.com" >> .env
+          echo "EVOLUTION_INSTANCE_NAME=test_instance" >> .env
+
       - name: Running Krayin Installer
         run: php artisan krayin-crm::install --skip-env-check --skip-admin-creation
 
-       - name: Running Pest Test
+      - name: Running PHP Unit Tests
+        run: vendor/bin/phpunit --colors=always
+
+      - name: Running Pest Tests
         run: vendor/bin/pest --parallel --colors=always
+
+      - name: Running Lint Check
+        run: npm run lint
+
+      - name: Running BackstopJS Visual Tests
+        run: npm run backstop:test
+        continue-on-error: true
