@@ -6,7 +6,6 @@ use App\Models\HistoricoConversas;
 use App\Models\LeadQuarkions;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -17,6 +16,7 @@ class MessageCreated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+
     public $lead;
 
     /**
@@ -36,7 +36,7 @@ class MessageCreated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('conversation.' . $this->lead->id),
+            new PrivateChannel('conversation.'.$this->lead->id),
             new Channel('whatsapp-messages'),
         ];
     }
@@ -56,21 +56,20 @@ class MessageCreated implements ShouldBroadcast
     {
         return [
             'message' => [
-                'id' => $this->message->id,
-                'lead_id' => $this->message->lead_id,
-                'mensagem' => $this->message->mensagem,
-                'tipo' => $this->message->tipo,
+                'id'        => $this->message->id,
+                'lead_id'   => $this->message->lead_id,
+                'mensagem'  => $this->message->mensagem,
+                'tipo'      => $this->message->tipo,
                 'criado_em' => $this->message->criado_em,
             ],
             'lead' => [
-                'id' => $this->lead->id,
-                'nome' => $this->lead->nome,
-                'telefone' => $this->lead->telefone,
+                'id'            => $this->lead->id,
+                'nome'          => $this->lead->nome,
+                'telefone'      => $this->lead->telefone,
                 'profile_photo' => $this->lead->profile_photo,
-                'last_message' => $this->lead->last_message,
-                'unread_count' => $this->lead->unread_count,
+                'last_message'  => $this->lead->last_message,
+                'unread_count'  => $this->lead->unread_count,
             ],
         ];
     }
 }
-

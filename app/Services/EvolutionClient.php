@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 class EvolutionClient
 {
     private $baseUrl;
+
     private $token;
+
     private $instanceName;
 
     public function __construct()
@@ -25,148 +27,148 @@ class EvolutionClient
 
     /**
      * Buscar URL da foto de perfil de um contato
-     * 
-     * @param string $number Número do telefone
+     *
+     * @param  string  $number  Número do telefone
      * @return array|false
      */
     public function profilePicture($number)
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
+                'apikey'       => $this->token,
                 'Content-Type' => 'application/json',
-            ])->post($this->baseUrl . '/chat/fetchProfilePictureUrl/' . $this->instanceName, [
-                'number' => $this->formatPhoneNumber($number)
+            ])->post($this->baseUrl.'/chat/fetchProfilePictureUrl/'.$this->instanceName, [
+                'number' => $this->formatPhoneNumber($number),
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 Log::info('Profile picture fetched successfully', [
-                    'number' => $number,
+                    'number'   => $number,
                     'response' => $data,
                 ]);
 
                 return [
-                    'success' => true,
-                    'wuid' => $data['wuid'] ?? null,
+                    'success'           => true,
+                    'wuid'              => $data['wuid'] ?? null,
                     'profilePictureUrl' => $data['profilePictureUrl'] ?? null,
                 ];
             } else {
                 Log::error('Failed to fetch profile picture', [
-                    'number' => $number,
-                    'status' => $response->status(),
+                    'number'   => $number,
+                    'status'   => $response->status(),
                     'response' => $response->body(),
                 ]);
 
                 return [
                     'success' => false,
-                    'error' => 'Failed to fetch profile picture: ' . $response->status(),
+                    'error'   => 'Failed to fetch profile picture: '.$response->status(),
                 ];
             }
         } catch (\Exception $e) {
             Log::error('Profile picture service error', [
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
                 'number' => $number,
             ]);
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Buscar a última mensagem de uma conversa
-     * 
-     * @param string $remoteJid ID remoto da conversa
+     *
+     * @param  string  $remoteJid  ID remoto da conversa
      * @return array|false
      */
     public function lastMessage($remoteJid)
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
+                'apikey'       => $this->token,
                 'Content-Type' => 'application/json',
-            ])->post($this->baseUrl . '/chat/findMessages/' . $this->instanceName, [
+            ])->post($this->baseUrl.'/chat/findMessages/'.$this->instanceName, [
                 'where' => [
                     'key' => [
-                        'remoteJid' => $remoteJid
-                    ]
+                        'remoteJid' => $remoteJid,
+                    ],
                 ],
                 'limit' => 1,
-                'sort' => [
-                    'messageTimestamp' => 'desc'
-                ]
+                'sort'  => [
+                    'messageTimestamp' => 'desc',
+                ],
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 Log::info('Last message fetched successfully', [
                     'remoteJid' => $remoteJid,
-                    'response' => $data,
+                    'response'  => $data,
                 ]);
 
                 $messages = $data['messages'] ?? [];
-                $lastMessage = !empty($messages) ? $messages[0] : null;
+                $lastMessage = ! empty($messages) ? $messages[0] : null;
 
                 return [
-                    'success' => true,
-                    'message' => $lastMessage,
-                    'text' => $lastMessage ? $this->extractMessageText($lastMessage) : null,
+                    'success'   => true,
+                    'message'   => $lastMessage,
+                    'text'      => $lastMessage ? $this->extractMessageText($lastMessage) : null,
                     'timestamp' => $lastMessage['messageTimestamp'] ?? null,
-                    'fromMe' => $lastMessage['key']['fromMe'] ?? false,
+                    'fromMe'    => $lastMessage['key']['fromMe'] ?? false,
                 ];
             } else {
                 Log::error('Failed to fetch last message', [
                     'remoteJid' => $remoteJid,
-                    'status' => $response->status(),
-                    'response' => $response->body(),
+                    'status'    => $response->status(),
+                    'response'  => $response->body(),
                 ]);
 
                 return [
                     'success' => false,
-                    'error' => 'Failed to fetch last message: ' . $response->status(),
+                    'error'   => 'Failed to fetch last message: '.$response->status(),
                 ];
             }
         } catch (\Exception $e) {
             Log::error('Last message service error', [
-                'error' => $e->getMessage(),
+                'error'     => $e->getMessage(),
                 'remoteJid' => $remoteJid,
             ]);
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Configurar webhook com eventos específicos
-     * 
-     * @param string $url URL do webhook
-     * @param array $events Lista de eventos
+     *
+     * @param  string  $url  URL do webhook
+     * @param  array  $events  Lista de eventos
      * @return array|false
      */
     public function setWebhook($url, $events = ['MESSAGE_RECEIVED', 'MESSAGE_ACK'])
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
+                'apikey'       => $this->token,
                 'Content-Type' => 'application/json',
-            ])->post($this->baseUrl . '/webhook/set/' . $this->instanceName, [
-                'url' => $url,
-                'events' => $events,
+            ])->post($this->baseUrl.'/webhook/set/'.$this->instanceName, [
+                'url'               => $url,
+                'events'            => $events,
                 'webhook_by_events' => true,
-                'webhook_base64' => false,
+                'webhook_base64'    => false,
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 Log::info('Webhook configured successfully', [
-                    'url' => $url,
-                    'events' => $events,
+                    'url'      => $url,
+                    'events'   => $events,
                     'response' => $data,
                 ]);
 
@@ -176,40 +178,40 @@ class EvolutionClient
                 ];
             } else {
                 Log::error('Failed to configure webhook', [
-                    'url' => $url,
-                    'events' => $events,
-                    'status' => $response->status(),
+                    'url'      => $url,
+                    'events'   => $events,
+                    'status'   => $response->status(),
                     'response' => $response->body(),
                 ]);
 
                 return [
                     'success' => false,
-                    'error' => 'Failed to configure webhook: ' . $response->status(),
+                    'error'   => 'Failed to configure webhook: '.$response->status(),
                 ];
             }
         } catch (\Exception $e) {
             Log::error('Webhook configuration error', [
-                'error' => $e->getMessage(),
-                'url' => $url,
+                'error'  => $e->getMessage(),
+                'url'    => $url,
                 'events' => $events,
             ]);
 
             return [
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ];
         }
     }
 
     /**
      * Extrair texto da mensagem baseado no tipo
-     * 
-     * @param array $message
+     *
+     * @param  array  $message
      * @return string|null
      */
     private function extractMessageText($message)
     {
-        if (!isset($message['message'])) {
+        if (! isset($message['message'])) {
             return null;
         }
 
@@ -270,8 +272,8 @@ class EvolutionClient
 
     /**
      * Formatar número de telefone
-     * 
-     * @param string $phone
+     *
+     * @param  string  $phone
      * @return string
      */
     private function formatPhoneNumber($phone)
@@ -280,8 +282,8 @@ class EvolutionClient
         $phone = preg_replace('/\D/', '', $phone);
 
         // Se não começar com código do país, adiciona o código do Brasil
-        if (strlen($phone) == 11 && !str_starts_with($phone, '55')) {
-            $phone = '55' . $phone;
+        if (strlen($phone) == 11 && ! str_starts_with($phone, '55')) {
+            $phone = '55'.$phone;
         }
 
         return $phone;
@@ -289,16 +291,15 @@ class EvolutionClient
 
     /**
      * Obter configurações atuais
-     * 
+     *
      * @return array
      */
     public function getConfig()
     {
         return [
-            'base_url' => $this->baseUrl,
+            'base_url'      => $this->baseUrl,
             'instance_name' => $this->instanceName,
-            'has_token' => !empty($this->token),
+            'has_token'     => ! empty($this->token),
         ];
     }
 }
-

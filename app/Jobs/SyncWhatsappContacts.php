@@ -23,7 +23,7 @@ class SyncWhatsappContacts implements ShouldQueue
         Log::info('Starting WhatsApp contacts sync job');
 
         try {
-            $evolutionClient = new EvolutionClient();
+            $evolutionClient = new EvolutionClient;
 
             // Buscar todos os leads que têm telefone mas não têm foto de perfil
             $leads = LeadQuarkions::whereNotNull('telefone')
@@ -38,7 +38,7 @@ class SyncWhatsappContacts implements ShouldQueue
 
             foreach ($leads as $lead) {
                 $this->syncContactProfilePhoto($lead, $evolutionClient);
-                
+
                 // Pequeno delay para evitar rate limiting
                 sleep(1);
             }
@@ -62,13 +62,13 @@ class SyncWhatsappContacts implements ShouldQueue
     {
         try {
             Log::info('Syncing profile photo for lead', [
-                'lead_id' => $lead->id,
+                'lead_id'  => $lead->id,
                 'telefone' => $lead->telefone,
             ]);
 
             $result = $evolutionClient->profilePicture($lead->telefone);
 
-            if ($result['success'] && !empty($result['profilePictureUrl'])) {
+            if ($result['success'] && ! empty($result['profilePictureUrl'])) {
                 // Atualizar o lead com a URL da foto de perfil
                 $lead->update([
                     'profile_photo' => $result['profilePictureUrl'],
@@ -76,14 +76,14 @@ class SyncWhatsappContacts implements ShouldQueue
                 ]);
 
                 Log::info('Profile photo updated successfully', [
-                    'lead_id' => $lead->id,
+                    'lead_id'           => $lead->id,
                     'profile_photo_url' => $result['profilePictureUrl'],
                 ]);
             } else {
                 Log::warning('Failed to fetch profile photo', [
-                    'lead_id' => $lead->id,
+                    'lead_id'  => $lead->id,
                     'telefone' => $lead->telefone,
-                    'error' => $result['error'] ?? 'Unknown error',
+                    'error'    => $result['error'] ?? 'Unknown error',
                 ]);
 
                 // Marcar como tentativa realizada para evitar tentar novamente
@@ -94,15 +94,15 @@ class SyncWhatsappContacts implements ShouldQueue
 
         } catch (\Exception $e) {
             Log::error('Error syncing profile photo for lead', [
-                'lead_id' => $lead->id,
+                'lead_id'  => $lead->id,
                 'telefone' => $lead->telefone,
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
 
             // Marcar como erro para evitar tentar novamente imediatamente
             $lead->update([
                 'profile_photo_sync_attempted' => now(),
-                'profile_photo_sync_error' => $e->getMessage(),
+                'profile_photo_sync_error'     => $e->getMessage(),
             ]);
         }
     }
@@ -118,4 +118,3 @@ class SyncWhatsappContacts implements ShouldQueue
         ]);
     }
 }
-

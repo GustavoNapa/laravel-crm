@@ -17,12 +17,12 @@ return new class extends Migration
             $table->text('whatsapp_wuid')->nullable()->after('profile_photo');
             $table->timestamp('profile_photo_sync_attempted')->nullable()->after('whatsapp_wuid');
             $table->text('profile_photo_sync_error')->nullable()->after('profile_photo_sync_attempted');
-            
+
             // Campos para última mensagem
             $table->text('last_message')->nullable()->after('profile_photo_sync_error');
             $table->timestamp('last_message_timestamp')->nullable()->after('last_message');
             $table->boolean('last_message_from_me')->default(false)->after('last_message_timestamp');
-            
+
             // Campo para contagem de mensagens não lidas
             $table->integer('unread_count')->default(0)->after('last_message_from_me');
         });
@@ -47,4 +47,3 @@ return new class extends Migration
         });
     }
 };
-

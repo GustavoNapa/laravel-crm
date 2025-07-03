@@ -10,7 +10,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SyncConversationJob implements ShouldQueue
@@ -25,7 +24,7 @@ class SyncConversationJob implements ShouldQueue
         Log::info('Starting conversation sync job');
 
         try {
-            $evolutionClient = new EvolutionClient();
+            $evolutionClient = new EvolutionClient;
 
             // Buscar todos os leads que têm telefone
             $leads = LeadQuarkions::whereNotNull('telefone')
@@ -36,7 +35,7 @@ class SyncConversationJob implements ShouldQueue
 
             foreach ($leads as $lead) {
                 $this->syncConversationData($lead, $evolutionClient);
-                
+
                 // Pequeno delay para evitar rate limiting
                 sleep(1);
             }
@@ -60,7 +59,7 @@ class SyncConversationJob implements ShouldQueue
     {
         try {
             Log::info('Syncing conversation data for lead', [
-                'lead_id' => $lead->id,
+                'lead_id'  => $lead->id,
                 'telefone' => $lead->telefone,
             ]);
 
@@ -70,54 +69,54 @@ class SyncConversationJob implements ShouldQueue
             // Buscar última mensagem via Evolution API
             $result = $evolutionClient->lastMessage($remoteJid);
 
-            if ($result['success'] && !empty($result['message'])) {
+            if ($result['success'] && ! empty($result['message'])) {
                 $lastMessageText = $result['text'];
                 $lastMessageTimestamp = $result['timestamp'];
                 $fromMe = $result['fromMe'];
 
                 // Atualizar dados da conversa no lead
                 $lead->update([
-                    'last_message' => $lastMessageText,
-                    'last_message_timestamp' => $lastMessageTimestamp ? 
+                    'last_message'           => $lastMessageText,
+                    'last_message_timestamp' => $lastMessageTimestamp ?
                         \Carbon\Carbon::createFromTimestamp($lastMessageTimestamp) : null,
                     'last_message_from_me' => $fromMe,
                 ]);
 
                 // Calcular contagem de mensagens não lidas
                 $unreadCount = $this->calculateUnreadCount($lead, $lastMessageTimestamp, $fromMe);
-                
+
                 $lead->update([
                     'unread_count' => $unreadCount,
                 ]);
 
                 Log::info('Conversation data updated successfully', [
-                    'lead_id' => $lead->id,
+                    'lead_id'      => $lead->id,
                     'last_message' => $lastMessageText,
                     'unread_count' => $unreadCount,
                 ]);
 
             } else {
                 Log::warning('No messages found for lead', [
-                    'lead_id' => $lead->id,
-                    'telefone' => $lead->telefone,
+                    'lead_id'    => $lead->id,
+                    'telefone'   => $lead->telefone,
                     'remote_jid' => $remoteJid,
-                    'error' => $result['error'] ?? 'No messages',
+                    'error'      => $result['error'] ?? 'No messages',
                 ]);
 
                 // Zerar contadores se não há mensagens
                 $lead->update([
-                    'last_message' => null,
+                    'last_message'           => null,
                     'last_message_timestamp' => null,
-                    'last_message_from_me' => false,
-                    'unread_count' => 0,
+                    'last_message_from_me'   => false,
+                    'unread_count'           => 0,
                 ]);
             }
 
         } catch (\Exception $e) {
             Log::error('Error syncing conversation data for lead', [
-                'lead_id' => $lead->id,
+                'lead_id'  => $lead->id,
                 'telefone' => $lead->telefone,
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
         }
     }
@@ -149,8 +148,8 @@ class SyncConversationJob implements ShouldQueue
             $unreadCount = $query->count();
 
             Log::debug('Calculated unread count', [
-                'lead_id' => $lead->id,
-                'unread_count' => $unreadCount,
+                'lead_id'                => $lead->id,
+                'unread_count'           => $unreadCount,
                 'last_sent_message_date' => $lastSentMessage?->criado_em,
             ]);
 
@@ -159,7 +158,7 @@ class SyncConversationJob implements ShouldQueue
         } catch (\Exception $e) {
             Log::error('Error calculating unread count', [
                 'lead_id' => $lead->id,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
 
             return 0;
@@ -175,11 +174,11 @@ class SyncConversationJob implements ShouldQueue
         $phone = preg_replace('/\D/', '', $telefone);
 
         // Se não começar com código do país, adiciona o código do Brasil
-        if (strlen($phone) == 11 && !str_starts_with($phone, '55')) {
-            $phone = '55' . $phone;
+        if (strlen($phone) == 11 && ! str_starts_with($phone, '55')) {
+            $phone = '55'.$phone;
         }
 
-        return $phone . '@s.whatsapp.net';
+        return $phone.'@s.whatsapp.net';
     }
 
     /**
@@ -193,4 +192,3 @@ class SyncConversationJob implements ShouldQueue
         ]);
     }
 }
-
