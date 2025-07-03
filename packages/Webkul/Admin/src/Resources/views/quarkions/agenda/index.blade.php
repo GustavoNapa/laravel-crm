@@ -69,7 +69,7 @@
                         </div>
                         
                         <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
-                            @{{ currentTitle }}
+                            @{{ calendarTitle }}
                         </h2>
                         
                         <div class="flex items-center gap-2">
@@ -177,7 +177,7 @@
                 data() {
                     return {
                         calendar: null,
-                        currentTitle: '',
+                        calendarTitle: '',
                         currentView: 'dayGridMonth',
                         showModal: false,
                         editingEvent: null,
@@ -240,7 +240,7 @@
                             },
                             
                             datesSet: (info) => {
-                                this.currentTitle = info.view.title;
+                                this.calendarTitle = info.view.title;
                                 this.currentView = info.view.type;
                             },
                             
@@ -252,7 +252,7 @@
                         });
                         
                         this.calendar.render();
-                        this.currentTitle = this.calendar.view.title;
+                        this.calendarTitle = this.calendar.view.title;
                     },
                     
                     changeView(viewName) {

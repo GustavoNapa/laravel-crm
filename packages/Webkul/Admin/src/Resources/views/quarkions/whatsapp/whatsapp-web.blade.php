@@ -235,7 +235,9 @@
         </div>
     </div>
 
+@pushOnce('scripts')
     <script type="module">
+    function initWhatsappInbox() {
         const { createApp } = Vue;
         
         createApp({
@@ -438,6 +440,15 @@
                 }, 30000);
             }
         }).mount('#whatsapp-web-app');
+    }
+
+    // Aguardar window.app estar disponível
+    if (window.app) {
+        initWhatsappInbox();
+    } else {
+        window.addEventListener('app:ready', initWhatsappInbox, { once: true });
+    }
     </script>
+@endpushOnce
 </x-admin::layouts>
 

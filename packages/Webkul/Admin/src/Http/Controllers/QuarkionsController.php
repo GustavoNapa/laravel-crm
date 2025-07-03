@@ -277,20 +277,6 @@ class QuarkionsController extends Controller
         }
     }
 
-    public function whatsappGetStatus()
-    {
-        try {
-            $evolutionService = new \App\Services\EvolutionSessionService();
-            $status = $evolutionService->getSessionStatus();
-            return response()->json($status);
-        } catch (\Exception $e) {
-            return response()->json([
-                'state' => 'error',
-                'message' => 'Erro ao verificar status: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     /**
      * Agentes IA methods
      */

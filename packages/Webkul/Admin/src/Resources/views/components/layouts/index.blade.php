@@ -153,6 +153,9 @@
          */
         window.addEventListener("load", function(event) {
             app.mount("#app");
+            
+            // Disparar evento para indicar que app está pronto
+            window.dispatchEvent(new Event('app:ready'));
         });
     </script>
 
