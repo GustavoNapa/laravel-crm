@@ -13,18 +13,18 @@ class WhatsappConversationRepository
      */
     public function getConversations($filters = [], $perPage = 15)
     {
-        $query = HistoricoConversas::with(['lead' => function($query) {
-                // Apenas campos necessários do lead
-                $query->select('id', 'nome', 'telefone', 'status');
-            }])
+        $query = HistoricoConversas::with(['lead' => function ($query) {
+            // Apenas campos necessários do lead
+            $query->select('id', 'nome', 'telefone', 'status');
+        }])
             ->select([
-                'historico_conversas.id',
-                'historico_conversas.lead_id',
-                'historico_conversas.mensagem',
-                'historico_conversas.criado_em',
-                DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
-                DB::raw('COUNT(historico_conversas.id) as message_count'),
-            ])
+            'historico_conversas.id',
+            'historico_conversas.lead_id',
+            'historico_conversas.mensagem',
+            'historico_conversas.criado_em',
+            DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
+            DB::raw('COUNT(historico_conversas.id) as message_count'),
+        ])
             ->join('leads_quarkions', 'historico_conversas.lead_id', '=', 'leads_quarkions.id')
             ->groupBy('historico_conversas.lead_id')
             ->orderBy('last_message_at', 'desc');
@@ -57,9 +57,9 @@ class WhatsappConversationRepository
      */
     public function getConversationHistory($leadId, $perPage = 50, $cursor = null)
     {
-        $query = HistoricoConversas::with(['lead' => function($query) {
-                $query->select('id', 'nome', 'telefone');
-            }])
+        $query = HistoricoConversas::with(['lead' => function ($query) {
+            $query->select('id', 'nome', 'telefone');
+        }])
             ->where('lead_id', $leadId)
             ->orderBy('criado_em', 'desc'); // Descendente para pegar as mais recentes primeiro
 

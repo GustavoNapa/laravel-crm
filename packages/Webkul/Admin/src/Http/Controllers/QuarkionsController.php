@@ -374,7 +374,7 @@ class QuarkionsController extends Controller
             $perPage = $request->get('per_page', 15);
             $search = $request->get('search');
             $cursor = $request->get('cursor'); // Para cursor pagination
-            
+
             // Primeiro tentar buscar da Evolution API
             try {
                 $evolutionService = new \App\Services\EvolutionChatService;
@@ -396,7 +396,7 @@ class QuarkionsController extends Controller
 
                 // Implementar paginação manual com cursor se disponível
                 $total = count($allConversations);
-                
+
                 // Cursor pagination para melhor performance
                 if ($cursor) {
                     // Encontrar índice do cursor
@@ -425,27 +425,27 @@ class QuarkionsController extends Controller
                         'total'        => $total,
                         'last_page'    => ceil($total / $perPage),
                         'has_more'     => count($conversations) >= $perPage,
-                        'next_cursor'  => $nextCursor
+                        'next_cursor'  => $nextCursor,
                     ],
                     'total'         => $total,
                 ]);
             } catch (\Exception $evolutionError) {
                 Log::warning('Evolution API failed, falling back to local data: '.$evolutionError->getMessage());
-                
+
                 // Fallback: buscar dados locais com paginação
-                $repository = new \App\Repositories\WhatsappConversationRepository();
+                $repository = new \App\Repositories\WhatsappConversationRepository;
                 $conversations = $repository->getConversations(
                     [
                         'search' => $search,
-                        'page' => $page,
-                        'cursor' => $cursor
-                    ], 
+                        'page'   => $page,
+                        'cursor' => $cursor,
+                    ],
                     $perPage
                 );
 
                 $formattedConversations = [];
                 foreach ($conversations->items() as $conversation) {
-                    $lead = $conversation->lead ?? new \stdClass();
+                    $lead = $conversation->lead ?? new \stdClass;
                     $formattedConversations[] = [
                         'id'              => $lead->id ?? $conversation->lead_id,
                         'name'            => $lead->nome ?? 'Sem nome',
@@ -467,7 +467,7 @@ class QuarkionsController extends Controller
                         'total'        => $conversations->total(),
                         'last_page'    => $conversations->lastPage(),
                         'has_more'     => $conversations->hasMorePages(),
-                        'next_cursor'  => null
+                        'next_cursor'  => null,
                     ],
                     'total'         => $conversations->total(),
                 ]);
@@ -485,7 +485,7 @@ class QuarkionsController extends Controller
                     'total'        => 0,
                     'last_page'    => 1,
                     'has_more'     => false,
-                    'next_cursor'  => null
+                    'next_cursor'  => null,
                 ],
             ], 500);
         }
@@ -501,14 +501,14 @@ class QuarkionsController extends Controller
             $perPage = $request->get('per_page', 20);
             $cursor = $request->get('cursor');
             $loadOlder = $request->get('load_older', false); // Para carregar mensagens mais antigas
-            
+
             $evolutionService = new \App\Services\EvolutionChatService;
 
             // Buscar mensagens da conversa com paginação
             $params = [
                 'cursor' => $cursor,
-                'limit' => $perPage,
-                'page' => $page
+                'limit'  => $perPage,
+                'page'   => $page,
             ];
 
             // Se está carregando mensagens mais antigas, ajustar parâmetros
@@ -520,14 +520,14 @@ class QuarkionsController extends Controller
 
             // Formatar mensagens para o frontend
             $formattedMessages = $evolutionService->formatMessageData($messages);
-            
+
             // Calcular informações de paginação
             $total = count($formattedMessages);
             $hasMore = $total >= $perPage; // Se retornou o máximo, provavelmente há mais
-            
+
             // Próximo cursor para paginação (timestamp da mensagem mais antiga)
             $nextCursor = null;
-            if ($hasMore && !empty($formattedMessages)) {
+            if ($hasMore && ! empty($formattedMessages)) {
                 $lastMessage = end($formattedMessages);
                 $nextCursor = $lastMessage['timestamp'] ?? $lastMessage['messageTimestamp'] ?? null;
             }
@@ -541,7 +541,7 @@ class QuarkionsController extends Controller
                     'has_more'     => $hasMore,
                     'total'        => $total,
                     'next_cursor'  => $nextCursor,
-                    'load_older'   => $loadOlder
+                    'load_older'   => $loadOlder,
                 ],
                 'conversation' => [
                     'id'        => $id,
@@ -553,16 +553,16 @@ class QuarkionsController extends Controller
             Log::error('WhatsApp conversation history error: '.$e->getMessage());
 
             return response()->json([
-                'success'  => false,
-                'message'  => 'Erro ao carregar histórico: '.$e->getMessage(),
-                'messages' => [],
+                'success'    => false,
+                'message'    => 'Erro ao carregar histórico: '.$e->getMessage(),
+                'messages'   => [],
                 'pagination' => [
                     'current_page' => 1,
                     'per_page'     => $perPage,
                     'has_more'     => false,
                     'total'        => 0,
                     'next_cursor'  => null,
-                    'load_older'   => false
+                    'load_older'   => false,
                 ],
             ], 500);
         }
@@ -624,45 +624,45 @@ class QuarkionsController extends Controller
     {
         try {
             $stats = [
-                'total_conversations' => 0,
-                'total_unread' => 0,
+                'total_conversations'  => 0,
+                'total_unread'         => 0,
                 'total_messages_today' => 0,
-                'active_chats' => 0
+                'active_chats'         => 0,
             ];
 
             // Tentar buscar da Evolution API primeiro
             try {
                 $evolutionService = new \App\Services\EvolutionChatService;
                 $chats = $evolutionService->findChats();
-                
+
                 if ($chats) {
                     $stats['total_conversations'] = count($chats);
-                    $stats['active_chats'] = count(array_filter($chats, function($chat) {
-                        return isset($chat['lastMessage']) && 
+                    $stats['active_chats'] = count(array_filter($chats, function ($chat) {
+                        return isset($chat['lastMessage']) &&
                                time() - ($chat['lastMessage']['messageTimestamp'] ?? 0) < 86400; // 24h
                     }));
                 }
             } catch (\Exception $e) {
                 Log::warning('Evolution API metadata failed: '.$e->getMessage());
-                
+
                 // Fallback local
-                $repository = new \App\Repositories\WhatsappConversationRepository();
+                $repository = new \App\Repositories\WhatsappConversationRepository;
                 $conversations = $repository->getConversations([], 999); // Buscar todos para contar
                 $stats['total_conversations'] = $conversations->total();
             }
 
             return response()->json([
-                'success' => true,
-                'stats' => $stats,
-                'timestamp' => now()->toISOString()
+                'success'   => true,
+                'stats'     => $stats,
+                'timestamp' => now()->toISOString(),
             ]);
         } catch (\Exception $e) {
             Log::error('WhatsApp metadata error: '.$e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao carregar metadados',
-                'stats' => []
+                'stats'   => [],
             ], 500);
         }
     }
@@ -697,7 +697,7 @@ class QuarkionsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Webhook testado com sucesso',
-                'data'    => $data
+                'data'    => $data,
             ]);
         } catch (\Exception $e) {
             Log::error('Erro no teste de webhook WhatsApp: '.$e->getMessage());
@@ -719,7 +719,7 @@ class QuarkionsController extends Controller
             // Por enquanto simular sucesso
             return response()->json([
                 'success' => true,
-                'message' => 'Conversa marcada como lida'
+                'message' => 'Conversa marcada como lida',
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -736,13 +736,13 @@ class QuarkionsController extends Controller
     {
         try {
             $status = $request->get('status');
-            
+
             // Implementar lógica para atualizar status
             // Por enquanto simular sucesso
             return response()->json([
                 'success' => true,
                 'message' => 'Status atualizado com sucesso',
-                'status'  => $status
+                'status'  => $status,
             ]);
         } catch (\Exception $e) {
             return response()->json([
