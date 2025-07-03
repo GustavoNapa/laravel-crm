@@ -5,7 +5,7 @@ use Webkul\Admin\Http\Controllers\QuarkionsController;
 
 Route::group([
     'middleware' => ['web', 'admin_locale', 'user'],
-    'prefix'     => 'quarkions'
+    'prefix'     => 'quarkions',
 ], function () {
 
     /**
@@ -31,7 +31,7 @@ Route::group([
     Route::get('/whatsapp/test-connection', [QuarkionsController::class, 'whatsappTestConnection'])->name('admin.quarkions.whatsapp.test-connection');
     Route::post('/whatsapp/test-webhook', [QuarkionsController::class, 'whatsappTestWebhook'])->name('admin.quarkions.whatsapp.test-webhook');
     Route::post('/whatsapp/webhook', [QuarkionsController::class, 'whatsappWebhook'])->name('admin.quarkions.whatsapp.webhook');
-    
+
     // WhatsApp Web API endpoints
     Route::get('/whatsapp/conversations', [QuarkionsController::class, 'whatsappConversations'])->name('admin.quarkions.whatsapp.conversations');
     Route::get('/whatsapp/conversations/{id}', [QuarkionsController::class, 'whatsappConversationHistory'])->name('admin.quarkions.whatsapp.conversation.history');
@@ -50,4 +50,3 @@ Route::group([
     Route::put('/agentes/{id}', [QuarkionsController::class, 'agentesUpdate'])->name('admin.quarkions.agentes.update');
     Route::delete('/agentes/{id}', [QuarkionsController::class, 'agentesDestroy'])->name('admin.quarkions.agentes.destroy');
 });
-

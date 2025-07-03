@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class AppViewServiceProvider extends ServiceProvider
@@ -20,8 +19,8 @@ class AppViewServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        app('view')->addNamespace("agenda", resource_path("views/agenda"));
-        app('view')->addNamespace("whatsapp", resource_path("views/whatsapp"));
-        app('view')->addNamespace("agentes", resource_path("views/agentes"));
+        app('view')->addNamespace('agenda', resource_path('views/agenda'));
+        app('view')->addNamespace('whatsapp', resource_path('views/whatsapp'));
+        app('view')->addNamespace('agentes', resource_path('views/agentes'));
     }
 }

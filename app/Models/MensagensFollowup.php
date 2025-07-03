@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class MensagensFollowup extends Model
 {
     use HasFactory, HasUuids;
 
     protected $table = 'mensagens_followup';
-    
+
     protected $fillable = [
         'cliente_id',
         'lead_id',
         'mensagem',
         'tipo',
         'agendado_para',
-        'enviado'
+        'enviado',
     ];
 
     public $timestamps = false;
@@ -26,7 +26,7 @@ class MensagensFollowup extends Model
     protected $dates = ['criado_em', 'agendado_para'];
 
     protected $casts = [
-        'enviado' => 'boolean'
+        'enviado' => 'boolean',
     ];
 
     const CREATED_AT = 'criado_em';

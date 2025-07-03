@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class LeadQuarkions extends Model
 {
     use HasFactory, HasUuids;
 
     protected $table = 'leads_quarkions';
-    
+
     protected $fillable = [
         'nome',
         'telefone',
         'email',
         'status',
         'origem',
-        'cliente_id'
+        'cliente_id',
     ];
 
     public $timestamps = false;

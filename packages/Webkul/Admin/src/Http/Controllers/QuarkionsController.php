@@ -2,21 +2,23 @@
 
 namespace Webkul\Admin\Http\Controllers;
 
-use App\Services\WhatsAppService;
+use App\Models\Agenda;
 use App\Repositories\WhatsappConversationRepository;
 use App\Services\EvolutionSessionService;
+use App\Services\GoogleCalendarSyncService;
+use App\Services\WhatsAppService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Models\Agenda;
-use App\Models\LeadQuarkions;
-use App\Services\GoogleCalendarSyncService;
-use Carbon\Carbon;
 
 class QuarkionsController extends Controller
 {
     protected $whatsappService;
+
     protected $googleCalendarService;
+
     protected $conversationRepository;
+
     protected $evolutionService;
 
     public function __construct(
@@ -47,23 +49,23 @@ class QuarkionsController extends Controller
     public function agendaStore(Request $request)
     {
         $request->validate([
-            'titulo' => 'nullable|string|max:255',
-            'data' => 'required|date',
-            'horario' => 'required|date_format:H:i',
-            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
-            'observacoes' => 'nullable|string',
-            'lead_id' => 'nullable|exists:leads_quarkions,id',
-            'sync_with_google' => 'boolean'
+            'titulo'           => 'nullable|string|max:255',
+            'data'             => 'required|date',
+            'horario'          => 'required|date_format:H:i',
+            'status'           => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes'      => 'nullable|string',
+            'lead_id'          => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean',
         ]);
 
         $agenda = Agenda::create([
-            'cliente_id' => 'default',
-            'lead_id' => $request->lead_id,
-            'data' => $request->data,
-            'horario' => $request->horario . ':00',
-            'status' => $request->status,
-            'observacoes' => $request->observacoes,
-            'titulo' => $request->titulo,
+            'cliente_id'       => 'default',
+            'lead_id'          => $request->lead_id,
+            'data'             => $request->data,
+            'horario'          => $request->horario.':00',
+            'status'           => $request->status,
+            'observacoes'      => $request->observacoes,
+            'titulo'           => $request->titulo,
             'sync_with_google' => $request->boolean('sync_with_google', false),
         ]);
 
@@ -74,7 +76,7 @@ class QuarkionsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Agendamento criado com sucesso!',
-            'agenda' => $agenda
+            'agenda'  => $agenda,
         ]);
     }
 
@@ -91,24 +93,24 @@ class QuarkionsController extends Controller
     public function agendaUpdate(Request $request, $id)
     {
         $agenda = Agenda::findOrFail($id);
-        
+
         $request->validate([
-            'titulo' => 'nullable|string|max:255',
-            'data' => 'required|date',
-            'horario' => 'required|date_format:H:i',
-            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
-            'observacoes' => 'nullable|string',
-            'lead_id' => 'nullable|exists:leads_quarkions,id',
-            'sync_with_google' => 'boolean'
+            'titulo'           => 'nullable|string|max:255',
+            'data'             => 'required|date',
+            'horario'          => 'required|date_format:H:i',
+            'status'           => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes'      => 'nullable|string',
+            'lead_id'          => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean',
         ]);
 
         $agenda->update([
-            'lead_id' => $request->lead_id,
-            'data' => $request->data,
-            'horario' => $request->horario . ':00',
-            'status' => $request->status,
-            'observacoes' => $request->observacoes,
-            'titulo' => $request->titulo,
+            'lead_id'          => $request->lead_id,
+            'data'             => $request->data,
+            'horario'          => $request->horario.':00',
+            'status'           => $request->status,
+            'observacoes'      => $request->observacoes,
+            'titulo'           => $request->titulo,
             'sync_with_google' => $request->boolean('sync_with_google', $agenda->sync_with_google),
         ]);
 
@@ -121,14 +123,14 @@ class QuarkionsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Agendamento atualizado com sucesso!',
-            'agenda' => $agenda
+            'agenda'  => $agenda,
         ]);
     }
 
     public function agendaDestroy($id)
     {
         $agenda = Agenda::findOrFail($id);
-        
+
         if ($agenda->google_event_id) {
             $this->googleCalendarService->deleteFromGoogle($agenda);
         }
@@ -137,7 +139,7 @@ class QuarkionsController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Agendamento excluído com sucesso!'
+            'message' => 'Agendamento excluído com sucesso!',
         ]);
     }
 
@@ -151,7 +153,7 @@ class QuarkionsController extends Controller
         if ($start && $end) {
             $query->whereBetween('data', [
                 Carbon::parse($start)->format('Y-m-d'),
-                Carbon::parse($end)->format('Y-m-d')
+                Carbon::parse($end)->format('Y-m-d'),
             ]);
         }
 
@@ -159,17 +161,17 @@ class QuarkionsController extends Controller
 
         $events = $agendamentos->map(function ($agenda) {
             return [
-                'id' => $agenda->id,
-                'title' => $agenda->titulo ?? ($agenda->lead->nome ?? 'Agendamento'),
-                'start' => $agenda->data . 'T' . $agenda->horario,
-                'className' => 'fc-event-' . $agenda->status,
+                'id'            => $agenda->id,
+                'title'         => $agenda->titulo ?? ($agenda->lead->nome ?? 'Agendamento'),
+                'start'         => $agenda->data.'T'.$agenda->horario,
+                'className'     => 'fc-event-'.$agenda->status,
                 'extendedProps' => [
-                    'status' => $agenda->status,
-                    'observacoes' => $agenda->observacoes,
-                    'lead_id' => $agenda->lead_id,
+                    'status'           => $agenda->status,
+                    'observacoes'      => $agenda->observacoes,
+                    'lead_id'          => $agenda->lead_id,
                     'sync_with_google' => $agenda->sync_with_google,
-                    'google_event_id' => $agenda->google_event_id,
-                ]
+                    'google_event_id'  => $agenda->google_event_id,
+                ],
             ];
         });
 
@@ -180,16 +182,16 @@ class QuarkionsController extends Controller
     {
         try {
             $synced = $this->googleCalendarService->syncPendingEvents();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Sincronização concluída com sucesso!',
-                'synced' => $synced
+                'synced'  => $synced,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro na sincronização: ' . $e->getMessage()
+                'message' => 'Erro na sincronização: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -199,18 +201,18 @@ class QuarkionsController extends Controller
         try {
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
-            
+
             $imported = $this->googleCalendarService->importFromGoogle($startDate, $endDate);
-            
+
             return response()->json([
-                'success' => true,
-                'message' => 'Importação concluída com sucesso!',
-                'imported' => $imported
+                'success'  => true,
+                'message'  => 'Importação concluída com sucesso!',
+                'imported' => $imported,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro na importação: ' . $e->getMessage()
+                'message' => 'Erro na importação: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -243,15 +245,16 @@ class QuarkionsController extends Controller
         try {
             $data = $request->all();
             Log::info('WhatsApp Webhook recebido:', $data);
-            
+
             $result = $this->evolutionService->processWebhook($data);
-            
+
             return response()->json($result, $result['success'] ? 200 : 400);
         } catch (\Exception $e) {
-            Log::error('Erro no webhook WhatsApp: ' . $e->getMessage());
+            Log::error('Erro no webhook WhatsApp: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro interno'
+                'message' => 'Erro interno',
             ], 500);
         }
     }
@@ -260,6 +263,7 @@ class QuarkionsController extends Controller
     {
         try {
             $result = $this->evolutionService->createInstance();
+
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -271,6 +275,7 @@ class QuarkionsController extends Controller
         try {
             $webhookUrl = $request->get('webhook_url');
             $result = $this->evolutionService->setWebhook($webhookUrl);
+
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -294,6 +299,7 @@ class QuarkionsController extends Controller
     {
         try {
             $agente = \App\Models\Agentes::create($request->all());
+
             return response()->json(['success' => true, 'agente' => $agente]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -340,11 +346,12 @@ class QuarkionsController extends Controller
     {
         try {
             $result = $this->evolutionService->testConnection();
+
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Erro ao testar conexão: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Erro ao testar conexão: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -355,35 +362,35 @@ class QuarkionsController extends Controller
     public function whatsappConversations(Request $request)
     {
         try {
-            $evolutionService = new \App\Services\EvolutionChatService();
-            
+            $evolutionService = new \App\Services\EvolutionChatService;
+
             // Buscar chats da Evolution API
             $chats = $evolutionService->findChats();
-            
+
             // Formatar dados para o frontend
             $conversations = $evolutionService->formatConversationData($chats);
-            
+
             // Aplicar filtros se necessário
             if ($request->get('search')) {
                 $search = strtolower($request->get('search'));
-                $conversations = array_filter($conversations, function($conv) use ($search) {
+                $conversations = array_filter($conversations, function ($conv) use ($search) {
                     return str_contains(strtolower($conv['name']), $search) ||
                            str_contains(strtolower($conv['lastMessage']), $search);
                 });
             }
-            
+
             return response()->json([
-                'success' => true,
+                'success'       => true,
                 'conversations' => array_values($conversations),
-                'total' => count($conversations)
+                'total'         => count($conversations),
             ]);
         } catch (\Exception $e) {
-            \Log::error('WhatsApp conversations error: ' . $e->getMessage());
-            
+            \Log::error('WhatsApp conversations error: '.$e->getMessage());
+
             return response()->json([
-                'success' => false,
-                'message' => 'Erro ao carregar conversas: ' . $e->getMessage(),
-                'conversations' => []
+                'success'       => false,
+                'message'       => 'Erro ao carregar conversas: '.$e->getMessage(),
+                'conversations' => [],
             ], 500);
         }
     }
@@ -394,30 +401,30 @@ class QuarkionsController extends Controller
     public function whatsappConversationHistory($id, Request $request)
     {
         try {
-            $evolutionService = new \App\Services\EvolutionChatService();
-            
+            $evolutionService = new \App\Services\EvolutionChatService;
+
             // Buscar mensagens da conversa
             $messages = $evolutionService->findMessages($id, $request->get('cursor'));
-            
+
             // Formatar mensagens para o frontend
             $formattedMessages = $evolutionService->formatMessageData($messages);
-            
+
             return response()->json([
-                'success' => true,
-                'messages' => $formattedMessages,
+                'success'      => true,
+                'messages'     => $formattedMessages,
                 'conversation' => [
-                    'id' => $id,
-                    'name' => $request->get('name', 'Contato'),
-                    'remoteJid' => $id
-                ]
+                    'id'        => $id,
+                    'name'      => $request->get('name', 'Contato'),
+                    'remoteJid' => $id,
+                ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('WhatsApp conversation history error: ' . $e->getMessage());
-            
+            \Log::error('WhatsApp conversation history error: '.$e->getMessage());
+
             return response()->json([
-                'success' => false,
-                'message' => 'Erro ao carregar histórico: ' . $e->getMessage(),
-                'messages' => []
+                'success'  => false,
+                'message'  => 'Erro ao carregar histórico: '.$e->getMessage(),
+                'messages' => [],
             ], 500);
         }
     }
@@ -438,35 +445,35 @@ class QuarkionsController extends Controller
         try {
             $request->validate([
                 'remoteJid' => 'required|string',
-                'message' => 'required|string'
+                'message'   => 'required|string',
             ]);
 
-            $evolutionService = new \App\Services\EvolutionChatService();
-            
+            $evolutionService = new \App\Services\EvolutionChatService;
+
             // Enviar mensagem via Evolution API
             $result = $evolutionService->sendMessage(
                 $request->get('remoteJid'),
                 $request->get('message')
             );
-            
+
             if ($result) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Mensagem enviada com sucesso',
-                    'data' => $result
+                    'data'    => $result,
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Falha ao enviar mensagem'
+                    'message' => 'Falha ao enviar mensagem',
                 ], 500);
             }
         } catch (\Exception $e) {
-            \Log::error('WhatsApp send message error: ' . $e->getMessage());
-            
+            \Log::error('WhatsApp send message error: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao enviar mensagem: ' . $e->getMessage()
+                'message' => 'Erro ao enviar mensagem: '.$e->getMessage(),
             ], 500);
         }
     }

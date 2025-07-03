@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Agenda;
 use App\Models\LeadQuarkions;
 use App\Services\GoogleCalendarSyncService;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AgendaController extends Controller
 {
@@ -24,11 +24,11 @@ class AgendaController extends Controller
     public function index()
     {
         $agendamentos = Agenda::with('lead')->orderBy('data', 'desc')->paginate(15);
-        
+
         if (request()->wantsJson()) {
             return response()->json($agendamentos);
         }
-        
+
         return view('agenda.index', compact('agendamentos'));
     }
 
@@ -45,7 +45,7 @@ class AgendaController extends Controller
         if ($start && $end) {
             $query->whereBetween('data', [
                 Carbon::parse($start)->format('Y-m-d'),
-                Carbon::parse($end)->format('Y-m-d')
+                Carbon::parse($end)->format('Y-m-d'),
             ]);
         }
 
@@ -53,17 +53,17 @@ class AgendaController extends Controller
 
         $events = $agendamentos->map(function ($agenda) {
             return [
-                'id' => $agenda->id,
-                'title' => $agenda->titulo ?? ($agenda->lead->nome ?? 'Agendamento'),
-                'start' => $agenda->data . 'T' . $agenda->horario,
-                'className' => 'fc-event-' . $agenda->status,
+                'id'            => $agenda->id,
+                'title'         => $agenda->titulo ?? ($agenda->lead->nome ?? 'Agendamento'),
+                'start'         => $agenda->data.'T'.$agenda->horario,
+                'className'     => 'fc-event-'.$agenda->status,
                 'extendedProps' => [
-                    'status' => $agenda->status,
-                    'observacoes' => $agenda->observacoes,
-                    'lead_id' => $agenda->lead_id,
+                    'status'           => $agenda->status,
+                    'observacoes'      => $agenda->observacoes,
+                    'lead_id'          => $agenda->lead_id,
                     'sync_with_google' => $agenda->sync_with_google,
-                    'google_event_id' => $agenda->google_event_id,
-                ]
+                    'google_event_id'  => $agenda->google_event_id,
+                ],
             ];
         });
 
@@ -76,6 +76,7 @@ class AgendaController extends Controller
     public function create()
     {
         $leads = LeadQuarkions::all();
+
         return response()->json(['leads' => $leads]);
     }
 
@@ -85,23 +86,23 @@ class AgendaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'titulo' => 'nullable|string|max:255',
-            'data' => 'required|date',
-            'horario' => 'required|date_format:H:i',
-            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
-            'observacoes' => 'nullable|string',
-            'lead_id' => 'nullable|exists:leads_quarkions,id',
-            'sync_with_google' => 'boolean'
+            'titulo'           => 'nullable|string|max:255',
+            'data'             => 'required|date',
+            'horario'          => 'required|date_format:H:i',
+            'status'           => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes'      => 'nullable|string',
+            'lead_id'          => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean',
         ]);
 
         $agenda = Agenda::create([
-            'cliente_id' => 'default', // Ajustar conforme necessário
-            'lead_id' => $request->lead_id,
-            'data' => $request->data,
-            'horario' => $request->horario . ':00',
-            'status' => $request->status,
-            'observacoes' => $request->observacoes,
-            'titulo' => $request->titulo,
+            'cliente_id'       => 'default', // Ajustar conforme necessário
+            'lead_id'          => $request->lead_id,
+            'data'             => $request->data,
+            'horario'          => $request->horario.':00',
+            'status'           => $request->status,
+            'observacoes'      => $request->observacoes,
+            'titulo'           => $request->titulo,
             'sync_with_google' => $request->boolean('sync_with_google', false),
         ]);
 
@@ -113,7 +114,7 @@ class AgendaController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Agendamento criado com sucesso!',
-            'agenda' => $agenda
+            'agenda'  => $agenda,
         ]);
     }
 
@@ -123,6 +124,7 @@ class AgendaController extends Controller
     public function show(Agenda $agenda)
     {
         $agenda->load('lead');
+
         return response()->json($agenda);
     }
 
@@ -132,6 +134,7 @@ class AgendaController extends Controller
     public function edit(Agenda $agenda)
     {
         $leads = LeadQuarkions::all();
+
         return response()->json(['agenda' => $agenda, 'leads' => $leads]);
     }
 
@@ -141,22 +144,22 @@ class AgendaController extends Controller
     public function update(Request $request, Agenda $agenda): JsonResponse
     {
         $request->validate([
-            'titulo' => 'nullable|string|max:255',
-            'data' => 'required|date',
-            'horario' => 'required|date_format:H:i',
-            'status' => 'required|in:agendado,confirmado,realizado,cancelado',
-            'observacoes' => 'nullable|string',
-            'lead_id' => 'nullable|exists:leads_quarkions,id',
-            'sync_with_google' => 'boolean'
+            'titulo'           => 'nullable|string|max:255',
+            'data'             => 'required|date',
+            'horario'          => 'required|date_format:H:i',
+            'status'           => 'required|in:agendado,confirmado,realizado,cancelado',
+            'observacoes'      => 'nullable|string',
+            'lead_id'          => 'nullable|exists:leads_quarkions,id',
+            'sync_with_google' => 'boolean',
         ]);
 
         $agenda->update([
-            'lead_id' => $request->lead_id,
-            'data' => $request->data,
-            'horario' => $request->horario . ':00',
-            'status' => $request->status,
-            'observacoes' => $request->observacoes,
-            'titulo' => $request->titulo,
+            'lead_id'          => $request->lead_id,
+            'data'             => $request->data,
+            'horario'          => $request->horario.':00',
+            'status'           => $request->status,
+            'observacoes'      => $request->observacoes,
+            'titulo'           => $request->titulo,
             'sync_with_google' => $request->boolean('sync_with_google', $agenda->sync_with_google),
         ]);
 
@@ -171,7 +174,7 @@ class AgendaController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Agendamento atualizado com sucesso!',
-            'agenda' => $agenda
+            'agenda'  => $agenda,
         ]);
     }
 
@@ -189,7 +192,7 @@ class AgendaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Agendamento excluído com sucesso!'
+            'message' => 'Agendamento excluído com sucesso!',
         ]);
     }
 
@@ -207,7 +210,7 @@ class AgendaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Agendamento confirmado com sucesso!'
+            'message' => 'Agendamento confirmado com sucesso!',
         ]);
     }
 
@@ -225,7 +228,7 @@ class AgendaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Agendamento cancelado com sucesso!'
+            'message' => 'Agendamento cancelado com sucesso!',
         ]);
     }
 
@@ -236,16 +239,16 @@ class AgendaController extends Controller
     {
         try {
             $synced = $this->googleCalendarService->syncPendingEvents();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Sincronização concluída com sucesso!',
-                'synced' => $synced
+                'synced'  => $synced,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro na sincronização: ' . $e->getMessage()
+                'message' => 'Erro na sincronização: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -258,20 +261,19 @@ class AgendaController extends Controller
         try {
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
-            
+
             $imported = $this->googleCalendarService->importFromGoogle($startDate, $endDate);
-            
+
             return response()->json([
-                'success' => true,
-                'message' => 'Importação concluída com sucesso!',
-                'imported' => $imported
+                'success'  => true,
+                'message'  => 'Importação concluída com sucesso!',
+                'imported' => $imported,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro na importação: ' . $e->getMessage()
+                'message' => 'Erro na importação: '.$e->getMessage(),
             ], 500);
         }
     }
 }
-
