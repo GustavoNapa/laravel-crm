@@ -364,115 +364,112 @@ class QuarkionsController extends Controller
     }
 
     /**
-     * Listar conversas WhatsApp
+     * Listar conversas WhatsApp usando Evolution API
      */
     public function whatsappConversations(Request $request)
     {
         try {
-            $filters = [
-                'search' => $request->get('search'),
-                'status' => $request->get('status'),
-                'unread_only' => $request->get('unread_only', false)
-            ];
-
-            $conversations = $this->conversationRepository->getConversations($filters, $request->get('per_page', 15));
-            $stats = $this->conversationRepository->getConversationStats();
-
-            // Transformar dados para formato esperado pelo frontend
-            $transformedData = $conversations->getCollection()->map(function ($conversation) {
-                return [
-                    'id' => $conversation->lead_id,
-                    'name' => $conversation->lead->nome ?? 'Contato',
-                    'phone' => $conversation->lead->telefone ?? '',
-                    'lastMessage' => $conversation->mensagem ?? '',
-                    'updatedAt' => $conversation->last_message_at ?? $conversation->criado_em,
-                    'unread' => 0, // Simplificado pois não temos coluna lida
-                    'status' => $conversation->lead->status ?? 'ativo'
-                ];
-            });
-
+            $evolutionService = new \App\Services\EvolutionChatService();
+            
+            // Buscar chats da Evolution API
+            $chats = $evolutionService->findChats();
+            
+            // Formatar dados para o frontend
+            $conversations = $evolutionService->formatConversationData($chats);
+            
+            // Aplicar filtros se necessário
+            if ($request->get('search')) {
+                $search = strtolower($request->get('search'));
+                $conversations = array_filter($conversations, function($conv) use ($search) {
+                    return str_contains(strtolower($conv['name']), $search) ||
+                           str_contains(strtolower($conv['lastMessage']), $search);
+                });
+            }
+            
             return response()->json([
                 'success' => true,
-                'conversations' => $transformedData,
-                'pagination' => [
-                    'current_page' => $conversations->currentPage(),
-                    'total' => $conversations->total(),
-                    'per_page' => $conversations->perPage(),
-                    'last_page' => $conversations->lastPage()
-                ],
-                'stats' => $stats
+                'conversations' => array_values($conversations),
+                'total' => count($conversations)
             ]);
         } catch (\Exception $e) {
+            \Log::error('WhatsApp conversations error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao carregar conversas: ' . $e->getMessage()
+                'message' => 'Erro ao carregar conversas: ' . $e->getMessage(),
+                'conversations' => []
             ], 500);
         }
     }
 
     /**
-     * Obter histórico de uma conversa específica
+     * Obter histórico de uma conversa específica usando Evolution API
      */
     public function whatsappConversationHistory($id, Request $request)
     {
         try {
-            $history = $this->conversationRepository->getConversationHistory($id, $request->get('per_page', 50));
-            $conversation = $this->conversationRepository->findByLeadId($id);
-
-            // Marcar mensagens como lidas
-            $this->conversationRepository->markAsRead($id, auth()->id());
-
+            $evolutionService = new \App\Services\EvolutionChatService();
+            
+            // Buscar mensagens da conversa
+            $messages = $evolutionService->findMessages($id, $request->get('cursor'));
+            
+            // Formatar mensagens para o frontend
+            $formattedMessages = $evolutionService->formatMessageData($messages);
+            
             return response()->json([
                 'success' => true,
-                'conversation' => $conversation,
-                'messages' => $history
+                'messages' => $formattedMessages,
+                'conversation' => [
+                    'id' => $id,
+                    'name' => $request->get('name', 'Contato'),
+                    'remoteJid' => $id
+                ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('WhatsApp conversation history error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao carregar histórico: ' . $e->getMessage()
+                'message' => 'Erro ao carregar histórico: ' . $e->getMessage(),
+                'messages' => []
             ], 500);
         }
     }
 
     /**
-     * Enviar mensagem WhatsApp
+     * Enviar mensagem WhatsApp usando Evolution API
      */
     public function whatsappSendMessage(Request $request)
     {
         try {
             $request->validate([
-                'lead_id' => 'required|exists:leads_quarkions,id',
+                'remoteJid' => 'required|string',
                 'message' => 'required|string'
             ]);
 
-            $lead = LeadQuarkions::find($request->lead_id);
+            $evolutionService = new \App\Services\EvolutionChatService();
             
-            // Enviar via Evolution API
-            $result = $this->evolutionService->sendTextMessage($lead->telefone, $request->message);
-
-            if ($result['success']) {
-                // Salvar no histórico
-                $message = $this->conversationRepository->createMessage([
-                    'lead_id' => $request->lead_id,
-                    'message' => $request->message,
-                    'type' => 'enviada',
-                    'status' => 'sent',
-                    'message_id' => $result['message_id'] ?? null
-                ]);
-
+            // Enviar mensagem via Evolution API
+            $result = $evolutionService->sendMessage(
+                $request->get('remoteJid'),
+                $request->get('message')
+            );
+            
+            if ($result) {
                 return response()->json([
                     'success' => true,
-                    'message' => $message,
+                    'message' => 'Mensagem enviada com sucesso',
                     'data' => $result
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Falha ao enviar mensagem: ' . ($result['message'] ?? 'Erro desconhecido')
-                ], 400);
+                    'message' => 'Falha ao enviar mensagem'
+                ], 500);
             }
         } catch (\Exception $e) {
+            \Log::error('WhatsApp send message error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao enviar mensagem: ' . $e->getMessage()
@@ -481,45 +478,26 @@ class QuarkionsController extends Controller
     }
 
     /**
-     * Marcar conversa como lida
+     * Verificar status da conexão WhatsApp usando Evolution API
      */
-    public function whatsappMarkAsRead($id)
+    public function whatsappGetStatus()
     {
         try {
-            $this->conversationRepository->markAsRead($id, auth()->id());
+            $evolutionService = new \App\Services\EvolutionChatService();
+            $status = $evolutionService->getConnectionStatus();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Conversa marcada como lida'
+                'status' => $status['status'],
+                'data' => $status['data']
             ]);
         } catch (\Exception $e) {
+            \Log::error('WhatsApp status error: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao marcar como lida: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Atualizar status da conversa
-     */
-    public function whatsappUpdateStatus(Request $request, $id)
-    {
-        try {
-            $request->validate([
-                'status' => 'required|in:ativo,inativo,resolvido,pendente'
-            ]);
-
-            $this->conversationRepository->updateConversationStatus($id, $request->status);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Status atualizado com sucesso'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao atualizar status: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => $e->getMessage()
             ], 500);
         }
     }
