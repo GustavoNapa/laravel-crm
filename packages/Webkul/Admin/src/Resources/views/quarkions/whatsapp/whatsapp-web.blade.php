@@ -237,217 +237,229 @@
 
 @pushOnce('scripts')
     <script type="module">
-    function initWhatsappInbox() {
-        const { createApp } = Vue;
-        
-        createApp({
-            data() {
-                return {
-                    conversations: [],
-                    selectedConversation: null,
-                    messages: [],
-                    searchQuery: '',
-                    newMessage: '',
-                    loading: true,
-                    loadingMessages: false,
-                    sending: false,
-                    connectionStatus: 'connecting'
-                }
-            },
-            computed: {
-                filteredConversations() {
-                    if (!Array.isArray(this.conversations)) {
-                        return [];
-                    }
-                    
-                    if (!this.searchQuery) {
-                        return this.conversations;
-                    }
-                    
-                    const query = this.searchQuery.toLowerCase();
-                    return this.conversations.filter(conv => 
-                        conv.name.toLowerCase().includes(query) ||
-                        conv.lastMessage.toLowerCase().includes(query)
-                    );
-                }
-            },
-            methods: {
-                async loadConversations() {
-                    try {
-                        this.loading = true;
-                        const response = await fetch('/admin/quarkions/whatsapp/conversations');
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            this.conversations = data.conversations || [];
-                        } else {
-                            console.error('Erro ao carregar conversas:', data.message);
+    document.addEventListener('DOMContentLoaded', function() {
+        function initWhatsappInbox() {
+            // Check if Vue is available
+            if (typeof Vue === 'undefined') {
+                console.error('Vue is not loaded');
+                return;
+            }
+            
+            const { createApp } = Vue;
+            
+            createApp({
+                data() {
+                    return {
+                        conversations: [],
+                        selectedConversation: null,
+                        messages: [],
+                        searchQuery: '',
+                        newMessage: '',
+                        loading: true,
+                        loadingMessages: false,
+                        sending: false,
+                        connectionStatus: 'connecting'
+                    };
+                },
+                computed: {
+                    filteredConversations() {
+                        if (!this.conversations || !Array.isArray(this.conversations)) {
+                            return [];
                         }
-                    } catch (error) {
-                        console.error('Erro ao carregar conversas:', error);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                
-                async selectConversation(conversation) {
-                    this.selectedConversation = conversation;
-                    await this.loadMessages(conversation.id);
-                },
-                
-                async loadMessages(conversationId) {
-                    try {
-                        this.loadingMessages = true;
-                        const response = await fetch(`/admin/quarkions/whatsapp/conversations/${conversationId}`);
-                        const data = await response.json();
                         
-                        if (data.success) {
-                            this.messages = data.messages || [];
-                            this.$nextTick(() => {
-                                this.scrollToBottom();
-                            });
-                        } else {
-                            console.error('Erro ao carregar mensagens:', data.message);
+                        if (!this.searchQuery) {
+                            return this.conversations;
                         }
-                    } catch (error) {
-                        console.error('Erro ao carregar mensagens:', error);
-                    } finally {
-                        this.loadingMessages = false;
+                        
+                        const query = this.searchQuery.toLowerCase();
+                        return this.conversations.filter(conv => 
+                            (conv.name && conv.name.toLowerCase().includes(query)) ||
+                            (conv.lastMessage && conv.lastMessage.toLowerCase().includes(query))
+                        );
                     }
                 },
-                
-                async sendMessage() {
-                    if (!this.newMessage.trim() || this.sending || !this.selectedConversation) {
-                        return;
-                    }
+                methods: {
+                    async loadConversations() {
+                        try {
+                            this.loading = true;
+                            const response = await fetch('/admin/quarkions/whatsapp/conversations');
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                this.conversations = data.conversations || [];
+                            } else {
+                                console.error('Erro ao carregar conversas:', data.message);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar conversas:', error);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
                     
-                    try {
-                        this.sending = true;
-                        const response = await fetch('/admin/quarkions/whatsapp/send-message', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({
-                                remoteJid: this.selectedConversation.remoteJid,
-                                message: this.newMessage
-                            })
-                        });
+                    async selectConversation(conversation) {
+                        this.selectedConversation = conversation;
+                        await this.loadMessages(conversation.id);
+                    },
+                    
+                    async loadMessages(conversationId) {
+                        try {
+                            this.loadingMessages = true;
+                            const response = await fetch(`/admin/quarkions/whatsapp/conversations/${conversationId}`);
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                this.messages = data.messages || [];
+                                this.$nextTick(() => {
+                                    this.scrollToBottom();
+                                });
+                            } else {
+                                console.error('Erro ao carregar mensagens:', data.message);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao carregar mensagens:', error);
+                        } finally {
+                            this.loadingMessages = false;
+                        }
+                    },
+                    
+                    async sendMessage() {
+                        if (!this.newMessage.trim() || this.sending || !this.selectedConversation) {
+                            return;
+                        }
                         
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            // Adicionar mensagem localmente
-                            this.messages.push({
-                                id: Date.now(),
-                                message: this.newMessage,
-                                fromMe: true,
-                                timestamp: Date.now()
+                        try {
+                            this.sending = true;
+                            const response = await fetch('/admin/quarkions/whatsapp/send-message', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({
+                                    remoteJid: this.selectedConversation.remoteJid,
+                                    message: this.newMessage
+                                })
                             });
                             
-                            this.newMessage = '';
-                            this.$nextTick(() => {
-                                this.scrollToBottom();
-                            });
-                        } else {
-                            alert('Erro ao enviar mensagem: ' + data.message);
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                // Adicionar mensagem localmente
+                                this.messages.push({
+                                    id: Date.now(),
+                                    message: this.newMessage,
+                                    fromMe: true,
+                                    timestamp: Date.now()
+                                });
+                                
+                                this.newMessage = '';
+                                this.$nextTick(() => {
+                                    this.scrollToBottom();
+                                });
+                            } else {
+                                alert('Erro ao enviar mensagem: ' + data.message);
+                            }
+                        } catch (error) {
+                            console.error('Erro ao enviar mensagem:', error);
+                            alert('Erro ao enviar mensagem');
+                        } finally {
+                            this.sending = false;
                         }
-                    } catch (error) {
-                        console.error('Erro ao enviar mensagem:', error);
-                        alert('Erro ao enviar mensagem');
-                    } finally {
-                        this.sending = false;
-                    }
-                },
-                
-                async checkConnectionStatus() {
-                    try {
-                        const response = await fetch('/admin/quarkions/whatsapp/status');
-                        const data = await response.json();
+                    },
+                    
+                    async checkConnectionStatus() {
+                        try {
+                            const response = await fetch('/admin/quarkions/whatsapp/status');
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                this.connectionStatus = data.status;
+                            }
+                        } catch (error) {
+                            this.connectionStatus = 'error';
+                        }
+                    },
+                    
+                    getAvatarColor(name) {
+                        const colors = [
+                            '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+                            '#2196f3', '#03a9f4', '#00bcd4', '#009688',
+                            '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b',
+                            '#ffc107', '#ff9800', '#ff5722', '#795548'
+                        ];
                         
-                        if (data.success) {
-                            this.connectionStatus = data.status;
+                        let hash = 0;
+                        for (let i = 0; i < name.length; i++) {
+                            hash = name.charCodeAt(i) + ((hash << 5) - hash);
                         }
-                    } catch (error) {
-                        this.connectionStatus = 'error';
-                    }
-                },
-                
-                getAvatarColor(name) {
-                    const colors = [
-                        '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
-                        '#2196f3', '#03a9f4', '#00bcd4', '#009688',
-                        '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b',
-                        '#ffc107', '#ff9800', '#ff5722', '#795548'
-                    ];
+                        
+                        return colors[Math.abs(hash) % colors.length];
+                    },
                     
-                    let hash = 0;
-                    for (let i = 0; i < name.length; i++) {
-                        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                    }
+                    getInitials(name) {
+                        return name.split(' ')
+                            .map(word => word.charAt(0))
+                            .join('')
+                            .substring(0, 2)
+                            .toUpperCase();
+                    },
                     
-                    return colors[Math.abs(hash) % colors.length];
-                },
-                
-                getInitials(name) {
-                    return name.split(' ')
-                        .map(word => word.charAt(0))
-                        .join('')
-                        .substring(0, 2)
-                        .toUpperCase();
-                },
-                
-                formatTime(timestamp) {
-                    if (!timestamp) return '';
-                    
-                    const date = new Date(timestamp * 1000);
-                    const now = new Date();
-                    
-                    if (date.toDateString() === now.toDateString()) {
-                        return date.toLocaleTimeString('pt-BR', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                    formatTime(timestamp) {
+                        if (!timestamp) return '';
+                        
+                        const date = new Date(timestamp * 1000);
+                        const now = new Date();
+                        
+                        if (date.toDateString() === now.toDateString()) {
+                            return date.toLocaleTimeString('pt-BR', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                        }
+                        
+                        return date.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit' 
                         });
-                    }
+                    },
                     
-                    return date.toLocaleDateString('pt-BR', { 
-                        day: '2-digit', 
-                        month: '2-digit' 
-                    });
+                    scrollToBottom() {
+                        const container = this.$refs.messagesContainer;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    }
                 },
                 
-                scrollToBottom() {
-                    const container = this.$refs.messagesContainer;
-                    if (container) {
-                        container.scrollTop = container.scrollHeight;
-                    }
+                async mounted() {
+                    await this.loadConversations();
+                    await this.checkConnectionStatus();
+                    
+                    // Polling para atualizar conversas
+                    setInterval(() => {
+                        this.loadConversations();
+                    }, 10000);
+                    
+                    // Polling para status de conexão
+                    setInterval(() => {
+                        this.checkConnectionStatus();
+                    }, 5000);
                 }
-            },
-            
-            async mounted() {
-                await this.loadConversations();
-                await this.checkConnectionStatus();
-                
-                // Polling para atualizar conversas
-                setInterval(() => {
-                    this.loadConversations();
-                }, 10000);
-                
-                // Polling para status de conexão
-                setInterval(() => {
-                    this.checkConnectionStatus();
-                }, 30000);
+            }).mount('#whatsapp-web-app');
+        }
+        
+        // Aguardar Vue e app estarem disponíveis
+        function waitForVue() {
+            if (typeof Vue !== 'undefined') {
+                initWhatsappInbox();
+            } else {
+                setTimeout(waitForVue, 100);
             }
-        }).mount('#whatsapp-web-app');
-    }
-
-    // Aguardar window.app estar disponível
-    if (window.app) {
-        initWhatsappInbox();
-    } else {
-        window.addEventListener('app:ready', initWhatsappInbox, { once: true });
-    }
+        }
+        
+        waitForVue();
+    });
     </script>
 @endpushOnce
 </x-admin::layouts>

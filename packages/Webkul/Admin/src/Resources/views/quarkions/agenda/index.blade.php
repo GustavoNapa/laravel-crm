@@ -179,11 +179,9 @@
         </script>
 
         <script type="module">
-            // Aguardar que o DOM e o Vue estejam carregados
-            document.addEventListener('DOMContentLoaded', function() {
-                // Tentar registrar o componente com retry
-                function registerComponent() {
-                    if (typeof app !== 'undefined' && app.component) {
+            // Aguardar que o Vue app esteja pronto
+            function registerComponent() {
+                if (typeof app !== 'undefined' && app.component) {
                         app.component('quarkions-agenda-calendar', {
                             template: '#quarkions-agenda-calendar-template',
                             
