@@ -2,21 +2,21 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use App\Models\HistoricoConversas;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\HistoricoConversas;
 
 class WhatsAppMessageReceived implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+
     public $leadId;
+
     public $userId;
 
     /**
@@ -35,8 +35,8 @@ class WhatsAppMessageReceived implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('whatsapp.' . ($this->userId ?? 'admin')),
-            new PrivateChannel('whatsapp.conversation.' . $this->leadId)
+            new PrivateChannel('whatsapp.'.($this->userId ?? 'admin')),
+            new PrivateChannel('whatsapp.conversation.'.$this->leadId),
         ];
     }
 
@@ -47,20 +47,20 @@ class WhatsAppMessageReceived implements ShouldBroadcast
     {
         return [
             'message' => [
-                'id' => $this->message->id,
-                'lead_id' => $this->message->lead_id,
-                'mensagem' => $this->message->mensagem,
-                'tipo' => $this->message->tipo,
-                'status' => $this->message->status,
+                'id'         => $this->message->id,
+                'lead_id'    => $this->message->lead_id,
+                'mensagem'   => $this->message->mensagem,
+                'tipo'       => $this->message->tipo,
+                'status'     => $this->message->status,
                 'created_at' => $this->message->created_at,
-                'lead' => [
-                    'id' => $this->message->lead->id,
-                    'nome' => $this->message->lead->nome,
+                'lead'       => [
+                    'id'       => $this->message->lead->id,
+                    'nome'     => $this->message->lead->nome,
                     'telefone' => $this->message->lead->telefone,
-                    'status' => $this->message->lead->status
-                ]
+                    'status'   => $this->message->lead->status,
+                ],
             ],
-            'timestamp' => now()->toISOString()
+            'timestamp' => now()->toISOString(),
         ];
     }
 
@@ -72,4 +72,3 @@ class WhatsAppMessageReceived implements ShouldBroadcast
         return 'WhatsAppMessageReceived';
     }
 }
-

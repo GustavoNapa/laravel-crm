@@ -55,11 +55,11 @@ require 'quarkions-routes.php';
 /**
  * Test route for debugging
  */
-Route::get('test-whatsapp', function() {
+Route::get('test-whatsapp', function () {
     return response()->json([
-        'status' => 'success',
-        'message' => 'Rota de teste funcionando',
-        'timestamp' => now()
+        'status'    => 'success',
+        'message'   => 'Rota de teste funcionando',
+        'timestamp' => now(),
     ]);
 })->name('admin.test.whatsapp');
 

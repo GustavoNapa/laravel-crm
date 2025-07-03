@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ConfiguracoesCliente extends Model
 {
     use HasFactory, HasUuids;
 
     protected $table = 'configuracoes_cliente';
-    
+
     protected $fillable = [
         'cliente_id',
         'prompt_qualificacao',
@@ -20,7 +20,7 @@ class ConfiguracoesCliente extends Model
         'prompt_followup_3',
         'prompt_agendamento',
         'mensagem_boas_vindas',
-        'mensagem_encerramento'
+        'mensagem_encerramento',
     ];
 
     public $timestamps = false;

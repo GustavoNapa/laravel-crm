@@ -21,18 +21,18 @@ return new class extends Migration
         $hasName = Schema::hasColumn('lead_pipeline_stages', 'name');
         $hasLeadStageId = Schema::hasColumn('lead_pipeline_stages', 'lead_stage_id');
 
-        // Se as colunas code e name já existem e lead_stage_id não existe, 
+        // Se as colunas code e name já existem e lead_stage_id não existe,
         // a migração já foi executada
-        if ($hasCode && $hasName && !$hasLeadStageId) {
+        if ($hasCode && $hasName && ! $hasLeadStageId) {
             return;
         }
 
         // Adicionar colunas se não existirem
         Schema::table('lead_pipeline_stages', function (Blueprint $table) use ($hasCode, $hasName) {
-            if (!$hasCode) {
+            if (! $hasCode) {
                 $table->string('code')->after('id')->nullable();
             }
-            if (!$hasName) {
+            if (! $hasName) {
                 $table->string('name')->after('code')->nullable();
             }
         });
@@ -42,12 +42,12 @@ return new class extends Migration
             try {
                 // Verificar se lead_stages tem as colunas necessárias
                 if (Schema::hasColumn('lead_stages', 'code') && Schema::hasColumn('lead_stages', 'name')) {
-                    DB::statement("
+                    DB::statement('
                         UPDATE lead_pipeline_stages 
                         SET code = (SELECT code FROM lead_stages WHERE id = lead_pipeline_stages.lead_stage_id),
                             name = (SELECT name FROM lead_stages WHERE id = lead_pipeline_stages.lead_stage_id)
                         WHERE lead_stage_id IS NOT NULL
-                    ");
+                    ');
                 }
             } catch (\Exception $e) {
                 // Se falhar, continuar sem migrar os dados
@@ -94,11 +94,10 @@ return new class extends Migration
                 $table->dropColumn('name');
             }
 
-            if (!Schema::hasColumn('lead_pipeline_stages', 'lead_stage_id')) {
+            if (! Schema::hasColumn('lead_pipeline_stages', 'lead_stage_id')) {
                 $table->integer('lead_stage_id')->unsigned();
                 $table->foreign('lead_stage_id')->references('id')->on('lead_stages')->onDelete('cascade');
             }
         });
     }
 };
-

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Support\Facades\Hash;
 
 class Usuarios extends Model
@@ -12,13 +12,13 @@ class Usuarios extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'usuarios';
-    
+
     protected $fillable = [
         'nome',
         'email',
         'senha',
         'tipo',
-        'cliente_id'
+        'cliente_id',
     ];
 
     public $timestamps = false;

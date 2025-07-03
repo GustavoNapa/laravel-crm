@@ -4,7 +4,6 @@ namespace App\Repositories;
 
 use App\Models\HistoricoConversas;
 use App\Models\LeadQuarkions;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class WhatsappConversationRepository
@@ -18,24 +17,24 @@ class WhatsappConversationRepository
             ->select([
                 'historico_conversas.*',
                 DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
-                DB::raw('COUNT(historico_conversas.id) as message_count')
+                DB::raw('COUNT(historico_conversas.id) as message_count'),
             ])
             ->join('leads_quarkions', 'historico_conversas.lead_id', '=', 'leads_quarkions.id')
             ->groupBy('historico_conversas.lead_id')
             ->orderBy('last_message_at', 'desc');
 
         // Filtro por busca
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('leads_quarkions.nome', 'LIKE', "%{$search}%")
-                  ->orWhere('leads_quarkions.telefone', 'LIKE', "%{$search}%")
-                  ->orWhere('historico_conversas.mensagem', 'LIKE', "%{$search}%");
+                    ->orWhere('leads_quarkions.telefone', 'LIKE', "%{$search}%")
+                    ->orWhere('historico_conversas.mensagem', 'LIKE', "%{$search}%");
             });
         }
 
         // Filtro por status
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('leads_quarkions.status', $filters['status']);
         }
 
@@ -73,10 +72,10 @@ class WhatsappConversationRepository
     public function createMessage($data)
     {
         return HistoricoConversas::create([
-            'lead_id' => $data['lead_id'],
-            'mensagem' => $data['message'],
-            'tipo' => $data['type'] ?? 'enviada',
-            'criado_em' => now()
+            'lead_id'   => $data['lead_id'],
+            'mensagem'  => $data['message'],
+            'tipo'      => $data['type'] ?? 'enviada',
+            'criado_em' => now(),
         ]);
     }
 
@@ -126,11 +125,10 @@ class WhatsappConversationRepository
     public function getConversationStats()
     {
         return [
-            'total_conversations' => LeadQuarkions::count(),
+            'total_conversations'  => LeadQuarkions::count(),
             'active_conversations' => LeadQuarkions::where('status', 'ativo')->count(),
-            'unread_messages' => $this->getUnreadCount(),
-            'today_messages' => HistoricoConversas::whereDate('criado_em', today())->count(),
+            'unread_messages'      => $this->getUnreadCount(),
+            'today_messages'       => HistoricoConversas::whereDate('criado_em', today())->count(),
         ];
     }
 }
-

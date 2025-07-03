@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 class EvolutionSessionService
 {
     private $baseUrl;
+
     private $token;
+
     private $instanceName;
 
     public function __construct()
@@ -25,31 +27,33 @@ class EvolutionSessionService
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
             ])->get($this->baseUrl);
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'success' => true,
-                    'status' => 'connected',
+                    'status'  => 'connected',
                     'message' => $data['message'] ?? 'Conexão estabelecida com sucesso',
-                    'version' => $data['version'] ?? 'unknown'
+                    'version' => $data['version'] ?? 'unknown',
                 ];
             }
 
             return [
                 'success' => false,
-                'status' => 'error',
-                'message' => 'Falha na conexão: ' . $response->status()
+                'status'  => 'error',
+                'message' => 'Falha na conexão: '.$response->status(),
             ];
         } catch (\Exception $e) {
-            Log::error('Evolution API connection test failed: ' . $e->getMessage());
+            Log::error('Evolution API connection test failed: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'status' => 'error',
-                'message' => 'Erro de conexão: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Erro de conexão: '.$e->getMessage(),
             ];
         }
     }
@@ -60,34 +64,35 @@ class EvolutionSessionService
     public function createInstance($instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->post($this->baseUrl . '/instance/create', [
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl.'/instance/create', [
                 'instanceName' => $instanceName,
-                'token' => $this->token,
-                'qrcode' => true,
-                'integration' => 'WHATSAPP-BAILEYS'
+                'token'        => $this->token,
+                'qrcode'       => true,
+                'integration'  => 'WHATSAPP-BAILEYS',
             ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao criar instância: ' . $response->body()
+                'message' => 'Falha ao criar instância: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to create Evolution instance: ' . $e->getMessage());
+            Log::error('Failed to create Evolution instance: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao criar instância: ' . $e->getMessage()
+                'message' => 'Erro ao criar instância: '.$e->getMessage(),
             ];
         }
     }
@@ -98,33 +103,35 @@ class EvolutionSessionService
     public function getInstanceStatus($instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->get($this->baseUrl . '/instance/connectionState/' . $instanceName);
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl.'/instance/connectionState/'.$instanceName);
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'success' => true,
-                    'state' => $data['instance']['state'] ?? 'unknown',
-                    'data' => $data
+                    'state'   => $data['instance']['state'] ?? 'unknown',
+                    'data'    => $data,
                 ];
             }
 
             return [
                 'success' => false,
-                'state' => 'error',
-                'message' => 'Falha ao obter status: ' . $response->body()
+                'state'   => 'error',
+                'message' => 'Falha ao obter status: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to get Evolution instance status: ' . $e->getMessage());
+            Log::error('Failed to get Evolution instance status: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'state' => 'error',
-                'message' => 'Erro ao obter status: ' . $e->getMessage()
+                'state'   => 'error',
+                'message' => 'Erro ao obter status: '.$e->getMessage(),
             ];
         }
     }
@@ -135,31 +142,33 @@ class EvolutionSessionService
     public function getQrCode($instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->get($this->baseUrl . '/instance/connect/' . $instanceName);
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl.'/instance/connect/'.$instanceName);
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'success' => true,
-                    'qrcode' => $data['qrcode'] ?? null,
-                    'base64' => $data['base64'] ?? null
+                    'qrcode'  => $data['qrcode'] ?? null,
+                    'base64'  => $data['base64'] ?? null,
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao obter QR Code: ' . $response->body()
+                'message' => 'Falha ao obter QR Code: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to get QR Code: ' . $e->getMessage());
+            Log::error('Failed to get QR Code: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao obter QR Code: ' . $e->getMessage()
+                'message' => 'Erro ao obter QR Code: '.$e->getMessage(),
             ];
         }
     }
@@ -170,32 +179,33 @@ class EvolutionSessionService
     public function sendTextMessage($number, $message, $instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->post($this->baseUrl . '/message/sendText/' . $instanceName, [
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl.'/message/sendText/'.$instanceName, [
                 'number' => $number,
-                'text' => $message
+                'text'   => $message,
             ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao enviar mensagem: ' . $response->body()
+                'message' => 'Falha ao enviar mensagem: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to send message: ' . $e->getMessage());
+            Log::error('Failed to send message: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao enviar mensagem: ' . $e->getMessage()
+                'message' => 'Erro ao enviar mensagem: '.$e->getMessage(),
             ];
         }
     }
@@ -206,15 +216,15 @@ class EvolutionSessionService
     public function setWebhook($webhookUrl, $instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->post($this->baseUrl . '/webhook/set/' . $instanceName, [
-                'url' => $webhookUrl,
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl.'/webhook/set/'.$instanceName, [
+                'url'     => $webhookUrl,
                 'enabled' => true,
-                'events' => [
+                'events'  => [
                     'APPLICATION_STARTUP',
                     'QRCODE_UPDATED',
                     'MESSAGES_UPSERT',
@@ -232,26 +242,27 @@ class EvolutionSessionService
                     'GROUPS_UPSERT',
                     'GROUP_UPDATE',
                     'GROUP_PARTICIPANTS_UPDATE',
-                    'CONNECTION_UPDATE'
-                ]
+                    'CONNECTION_UPDATE',
+                ],
             ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao configurar webhook: ' . $response->body()
+                'message' => 'Falha ao configurar webhook: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to set webhook: ' . $e->getMessage());
+            Log::error('Failed to set webhook: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao configurar webhook: ' . $e->getMessage()
+                'message' => 'Erro ao configurar webhook: '.$e->getMessage(),
             ];
         }
     }
@@ -262,29 +273,30 @@ class EvolutionSessionService
     public function deleteInstance($instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->delete($this->baseUrl . '/instance/delete/' . $instanceName);
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->delete($this->baseUrl.'/instance/delete/'.$instanceName);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao deletar instância: ' . $response->body()
+                'message' => 'Falha ao deletar instância: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to delete instance: ' . $e->getMessage());
+            Log::error('Failed to delete instance: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao deletar instância: ' . $e->getMessage()
+                'message' => 'Erro ao deletar instância: '.$e->getMessage(),
             ];
         }
     }
@@ -296,26 +308,27 @@ class EvolutionSessionService
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->get($this->baseUrl . '/instance/fetchInstances');
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->get($this->baseUrl.'/instance/fetchInstances');
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao listar instâncias: ' . $response->body()
+                'message' => 'Falha ao listar instâncias: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to list instances: ' . $e->getMessage());
+            Log::error('Failed to list instances: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao listar instâncias: ' . $e->getMessage()
+                'message' => 'Erro ao listar instâncias: '.$e->getMessage(),
             ];
         }
     }
@@ -334,12 +347,12 @@ class EvolutionSessionService
     public function reconnectIfNeeded($instanceName = null)
     {
         $status = $this->getInstanceStatus($instanceName);
-        
-        if (!$status['success'] || $status['state'] === 'close') {
+
+        if (! $status['success'] || $status['state'] === 'close') {
             // Tentar reconectar
             return $this->getQrCode($instanceName);
         }
-        
+
         return $status;
     }
 
@@ -349,29 +362,30 @@ class EvolutionSessionService
     public function forceReconnect($instanceName = null)
     {
         $instanceName = $instanceName ?? $this->instanceName;
-        
+
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->token,
-                'Content-Type' => 'application/json'
-            ])->put($this->baseUrl . '/instance/restart/' . $instanceName);
+                'apikey'       => $this->token,
+                'Content-Type' => 'application/json',
+            ])->put($this->baseUrl.'/instance/restart/'.$instanceName);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json()
+                    'data'    => $response->json(),
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Falha ao reconectar: ' . $response->body()
+                'message' => 'Falha ao reconectar: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to force reconnect: ' . $e->getMessage());
+            Log::error('Failed to force reconnect: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Erro ao reconectar: ' . $e->getMessage()
+                'message' => 'Erro ao reconectar: '.$e->getMessage(),
             ];
         }
     }
@@ -382,7 +396,7 @@ class EvolutionSessionService
     public function processWebhook($data)
     {
         try {
-            if (!isset($data['event']) || $data['event'] !== 'messages.upsert') {
+            if (! isset($data['event']) || $data['event'] !== 'messages.upsert') {
                 return ['success' => false, 'message' => 'Evento não suportado'];
             }
 
@@ -393,7 +407,7 @@ class EvolutionSessionService
 
             // Extrair informações da mensagem
             $remoteJid = $messageData['key']['remoteJid'] ?? '';
-            $messageText = $messageData['message']['conversation'] ?? 
+            $messageText = $messageData['message']['conversation'] ??
                           $messageData['message']['extendedTextMessage']['text'] ?? '';
             $messageId = $messageData['key']['id'] ?? '';
             $timestamp = $messageData['messageTimestamp'] ?? time();
@@ -404,27 +418,27 @@ class EvolutionSessionService
 
             // Extrair número de telefone
             $phoneNumber = str_replace(['@s.whatsapp.net', '@g.us'], '', $remoteJid);
-            
+
             // Buscar ou criar lead
             $lead = \App\Models\LeadQuarkions::firstOrCreate(
                 ['telefone' => $phoneNumber],
                 [
-                    'nome' => 'Usuário ' . substr($phoneNumber, -4),
+                    'nome'   => 'Usuário '.substr($phoneNumber, -4),
                     'status' => 'ativo',
-                    'origem' => 'whatsapp'
+                    'origem' => 'whatsapp',
                 ]
             );
 
             // Criar registro da mensagem
             $message = \App\Models\HistoricoConversas::create([
-                'lead_id' => $lead->id,
-                'mensagem' => $messageText,
-                'tipo' => 'recebida',
-                'status' => 'received',
+                'lead_id'    => $lead->id,
+                'mensagem'   => $messageText,
+                'tipo'       => 'recebida',
+                'status'     => 'received',
                 'message_id' => $messageId,
-                'lida' => false,
+                'lida'       => false,
                 'created_at' => \Carbon\Carbon::createFromTimestamp($timestamp),
-                'updated_at' => now()
+                'updated_at' => now(),
             ]);
 
             // Disparar evento para broadcast
@@ -433,23 +447,22 @@ class EvolutionSessionService
             return [
                 'success' => true,
                 'message' => 'Mensagem processada com sucesso',
-                'data' => [
-                    'lead_id' => $lead->id,
-                    'message_id' => $message->id
-                ]
+                'data'    => [
+                    'lead_id'    => $lead->id,
+                    'message_id' => $message->id,
+                ],
             ];
 
         } catch (\Exception $e) {
-            \Log::error('Erro ao processar webhook WhatsApp: ' . $e->getMessage(), [
-                'data' => $data,
-                'trace' => $e->getTraceAsString()
+            \Log::error('Erro ao processar webhook WhatsApp: '.$e->getMessage(), [
+                'data'  => $data,
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Erro interno: ' . $e->getMessage()
+                'message' => 'Erro interno: '.$e->getMessage(),
             ];
         }
     }
 }
-

@@ -2,23 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Agenda extends Model
 {
     use HasFactory, HasUuids;
 
     protected $table = 'agenda';
-    
+
     protected $fillable = [
         'cliente_id',
         'lead_id',
         'data',
         'horario',
         'status',
-        'observacoes'
+        'observacoes',
     ];
 
     public $timestamps = false;

@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Exception;
 
 class EvolutionChatService
 {
     private $baseUrl;
+
     private $apiKey;
+
     private $instance;
 
     public function __construct()
@@ -27,8 +29,8 @@ class EvolutionChatService
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->apiKey,
-                'Content-Type' => 'application/json'
+                'apikey'       => $this->apiKey,
+                'Content-Type' => 'application/json',
             ])->post("{$this->baseUrl}/chat/findChats/{$this->instance}");
 
             if ($response->successful()) {
@@ -37,14 +39,15 @@ class EvolutionChatService
 
             Log::error('Evolution API findChats failed', [
                 'status' => $response->status(),
-                'body' => $response->body()
+                'body'   => $response->body(),
             ]);
 
             return [];
         } catch (Exception $e) {
             Log::error('Evolution API findChats exception', [
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
@@ -62,8 +65,8 @@ class EvolutionChatService
             }
 
             $response = Http::withHeaders([
-                'apikey' => $this->apiKey,
-                'Content-Type' => 'application/json'
+                'apikey'       => $this->apiKey,
+                'Content-Type' => 'application/json',
             ])->post("{$this->baseUrl}/chat/findContacts/{$this->instance}", $body);
 
             if ($response->successful()) {
@@ -72,14 +75,15 @@ class EvolutionChatService
 
             Log::error('Evolution API findContacts failed', [
                 'status' => $response->status(),
-                'body' => $response->body()
+                'body'   => $response->body(),
             ]);
 
             return [];
         } catch (Exception $e) {
             Log::error('Evolution API findContacts exception', [
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
@@ -94,9 +98,9 @@ class EvolutionChatService
             $body = [
                 'where' => [
                     'key' => [
-                        'remoteJid' => $remoteJid
-                    ]
-                ]
+                        'remoteJid' => $remoteJid,
+                    ],
+                ],
             ];
 
             // Adicionar cursor para paginação se fornecido
@@ -108,8 +112,8 @@ class EvolutionChatService
             $body['limit'] = $limit;
 
             $response = Http::withHeaders([
-                'apikey' => $this->apiKey,
-                'Content-Type' => 'application/json'
+                'apikey'       => $this->apiKey,
+                'Content-Type' => 'application/json',
             ])->post("{$this->baseUrl}/chat/findMessages/{$this->instance}", $body);
 
             if ($response->successful()) {
@@ -117,17 +121,18 @@ class EvolutionChatService
             }
 
             Log::error('Evolution API findMessages failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'remoteJid' => $remoteJid
+                'status'    => $response->status(),
+                'body'      => $response->body(),
+                'remoteJid' => $remoteJid,
             ]);
 
             return [];
         } catch (Exception $e) {
             Log::error('Evolution API findMessages exception', [
-                'message' => $e->getMessage(),
-                'remoteJid' => $remoteJid
+                'message'   => $e->getMessage(),
+                'remoteJid' => $remoteJid,
             ]);
+
             return [];
         }
     }
@@ -141,12 +146,12 @@ class EvolutionChatService
         try {
             $body = [
                 'number' => $remoteJid,
-                'text' => $message
+                'text'   => $message,
             ];
 
             $response = Http::withHeaders([
-                'apikey' => $this->apiKey,
-                'Content-Type' => 'application/json'
+                'apikey'       => $this->apiKey,
+                'Content-Type' => 'application/json',
             ])->post("{$this->baseUrl}/message/sendText/{$this->instance}", $body);
 
             if ($response->successful()) {
@@ -154,17 +159,18 @@ class EvolutionChatService
             }
 
             Log::error('Evolution API sendMessage failed', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-                'remoteJid' => $remoteJid
+                'status'    => $response->status(),
+                'body'      => $response->body(),
+                'remoteJid' => $remoteJid,
             ]);
 
             return false;
         } catch (Exception $e) {
             Log::error('Evolution API sendMessage exception', [
-                'message' => $e->getMessage(),
-                'remoteJid' => $remoteJid
+                'message'   => $e->getMessage(),
+                'remoteJid' => $remoteJid,
             ]);
+
             return false;
         }
     }
@@ -177,22 +183,24 @@ class EvolutionChatService
     {
         try {
             $response = Http::withHeaders([
-                'apikey' => $this->apiKey
+                'apikey' => $this->apiKey,
             ])->get("{$this->baseUrl}/instance/connectionState/{$this->instance}");
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'status' => $data['instance']['state'] ?? 'disconnected',
-                    'data' => $data
+                    'data'   => $data,
                 ];
             }
 
             return ['status' => 'disconnected', 'data' => null];
         } catch (Exception $e) {
             Log::error('Evolution API getConnectionStatus exception', [
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
+
             return ['status' => 'error', 'data' => null];
         }
     }
@@ -206,14 +214,14 @@ class EvolutionChatService
 
         foreach ($chats as $chat) {
             $formatted[] = [
-                'id' => $chat['id'] ?? '',
-                'name' => $chat['name'] ?? $chat['pushName'] ?? 'Sem nome',
-                'avatar' => $chat['profilePictureUrl'] ?? null,
-                'lastMessage' => $chat['lastMessage']['message'] ?? '',
+                'id'              => $chat['id'] ?? '',
+                'name'            => $chat['name'] ?? $chat['pushName'] ?? 'Sem nome',
+                'avatar'          => $chat['profilePictureUrl'] ?? null,
+                'lastMessage'     => $chat['lastMessage']['message'] ?? '',
                 'lastMessageTime' => $chat['lastMessage']['messageTimestamp'] ?? null,
-                'unreadCount' => $chat['unreadMessages'] ?? 0,
-                'isGroup' => str_contains($chat['id'] ?? '', '@g.us'),
-                'remoteJid' => $chat['id'] ?? ''
+                'unreadCount'     => $chat['unreadMessages'] ?? 0,
+                'isGroup'         => str_contains($chat['id'] ?? '', '@g.us'),
+                'remoteJid'       => $chat['id'] ?? '',
             ];
         }
 
@@ -229,14 +237,14 @@ class EvolutionChatService
 
         foreach ($messages as $message) {
             $formatted[] = [
-                'id' => $message['key']['id'] ?? '',
+                'id'        => $message['key']['id'] ?? '',
                 'remoteJid' => $message['key']['remoteJid'] ?? '',
-                'fromMe' => $message['key']['fromMe'] ?? false,
-                'message' => $message['message']['conversation'] ?? 
+                'fromMe'    => $message['key']['fromMe'] ?? false,
+                'message'   => $message['message']['conversation'] ??
                            $message['message']['extendedTextMessage']['text'] ?? '',
                 'timestamp' => $message['messageTimestamp'] ?? null,
-                'status' => $message['status'] ?? 'sent',
-                'type' => $this->getMessageType($message['message'] ?? [])
+                'status'    => $message['status'] ?? 'sent',
+                'type'      => $this->getMessageType($message['message'] ?? []),
             ];
         }
 
@@ -248,14 +256,25 @@ class EvolutionChatService
      */
     private function getMessageType($messageContent)
     {
-        if (isset($messageContent['conversation'])) return 'text';
-        if (isset($messageContent['extendedTextMessage'])) return 'text';
-        if (isset($messageContent['imageMessage'])) return 'image';
-        if (isset($messageContent['videoMessage'])) return 'video';
-        if (isset($messageContent['audioMessage'])) return 'audio';
-        if (isset($messageContent['documentMessage'])) return 'document';
-        
+        if (isset($messageContent['conversation'])) {
+            return 'text';
+        }
+        if (isset($messageContent['extendedTextMessage'])) {
+            return 'text';
+        }
+        if (isset($messageContent['imageMessage'])) {
+            return 'image';
+        }
+        if (isset($messageContent['videoMessage'])) {
+            return 'video';
+        }
+        if (isset($messageContent['audioMessage'])) {
+            return 'audio';
+        }
+        if (isset($messageContent['documentMessage'])) {
+            return 'document';
+        }
+
         return 'unknown';
     }
 }
-
