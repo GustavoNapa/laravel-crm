@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('persons', function (Blueprint $table) {
-            $table->dropForeign(['organization_id']);
-
-            $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('set null');
-        });
+        // SQLite não suporta alterar foreign keys
+        // Esta migração é apenas para alterar o comportamento onDelete
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('persons', function (Blueprint $table) {
+                $table->dropForeign(['organization_id']);
+                $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('set null');
+            });
+        }
     }
 
     /**
@@ -23,10 +26,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('persons', function (Blueprint $table) {
-            $table->dropForeign(['organization_id']);
-
-            $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
-        });
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('persons', function (Blueprint $table) {
+                $table->dropForeign(['organization_id']);
+                $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
+            });
+        }
     }
 };
+

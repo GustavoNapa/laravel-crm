@@ -276,11 +276,12 @@
             },
             computed: {
                 filteredConversations() {
+                    if (!Array.isArray(this.conversations)) return [];
                     if (!this.searchQuery) return this.conversations;
                     
                     return this.conversations.filter(conv => 
-                        conv.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                        conv.lastMessage.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        (conv.name && conv.name.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+                        (conv.lastMessage && conv.lastMessage.toLowerCase().includes(this.searchQuery.toLowerCase()))
                     );
                 }
             },

@@ -13,11 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('leads', function (Blueprint $table) {
-            $table->dropForeign(['lead_pipeline_stage_id']);
-
-            $table->foreign('lead_pipeline_stage_id')->references('id')->on('lead_pipeline_stages')->onDelete('set null');
-        });
+        // SQLite não suporta alterar foreign keys
+        // Esta migração é apenas para alterar o comportamento onDelete
+        // No SQLite, vamos apenas pular esta alteração
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('leads', function (Blueprint $table) {
+                $table->dropForeign(['lead_pipeline_stage_id']);
+                $table->foreign('lead_pipeline_stage_id')->references('id')->on('lead_pipeline_stages')->onDelete('set null');
+            });
+        }
     }
 
     /**
@@ -27,10 +31,12 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('leads', function (Blueprint $table) {
-            $table->dropForeign(['lead_pipeline_stage_id']);
-
-            $table->foreign('lead_pipeline_stage_id')->references('id')->on('lead_pipeline_stages')->onDelete('cascade');
-        });
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('leads', function (Blueprint $table) {
+                $table->dropForeign(['lead_pipeline_stage_id']);
+                $table->foreign('lead_pipeline_stage_id')->references('id')->on('lead_pipeline_stages')->onDelete('cascade');
+            });
+        }
     }
 };
+

@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Webkul\Admin\Http\Controllers\QuarkionsController;
 
 Route::group([
-    'middleware' => ['web', 'admin'],
+    'middleware' => ['web', 'admin_locale', 'user'],
     'prefix'     => 'quarkions'
 ], function () {
 

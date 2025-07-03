@@ -12,21 +12,38 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Verificar se a coluna já existe
+        if (Schema::hasColumn('persons', 'unique_id')) {
+            return;
+        }
+
         Schema::table('persons', function (Blueprint $table) {
             $table->string('unique_id')->nullable()->unique();
         });
 
         $tableName = DB::getTablePrefix().'persons';
 
-        DB::statement("
-            UPDATE {$tableName}
-            SET unique_id = CONCAT(
-                user_id, '|', 
-                organization_id, '|', 
-                JSON_UNQUOTE(JSON_EXTRACT(emails, '$[0].value')), '|',
-                JSON_UNQUOTE(JSON_EXTRACT(contact_numbers, '$[0].value'))
-            )
-        ");
+        // Usar sintaxe compatível com SQLite
+        if (config('database.default') === 'sqlite') {
+            DB::statement("
+                UPDATE {$tableName}
+                SET unique_id = 
+                    COALESCE(user_id, 0) || '|' || 
+                    COALESCE(organization_id, 0) || '|' || 
+                    COALESCE(json_extract(emails, '$[0].value'), '') || '|' ||
+                    COALESCE(json_extract(contact_numbers, '$[0].value'), '')
+            ");
+        } else {
+            DB::statement("
+                UPDATE {$tableName}
+                SET unique_id = CONCAT(
+                    user_id, '|', 
+                    organization_id, '|', 
+                    JSON_UNQUOTE(JSON_EXTRACT(emails, '$[0].value')), '|',
+                    JSON_UNQUOTE(JSON_EXTRACT(contact_numbers, '$[0].value'))
+                )
+            ");
+        }
     }
 
     /**
@@ -35,7 +52,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('persons', function (Blueprint $table) {
-            $table->dropColumn('unique_id');
+            if (Schema::hasColumn('persons', 'unique_id')) {
+                $table->dropColumn('unique_id');
+            }
         });
     }
 };
+

@@ -96,7 +96,8 @@
                 <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div class="w-full max-w-md rounded-lg bg-white p-6 dark:bg-gray-800">
                         <h3 class="mb-4 text-lg font-semibold text-gray-800 dark:text-white">
-                            {{ editingEvent ? 'Editar Agendamento' : 'Novo Agendamento' }}
+                            <span v-if="editingEvent">Editar Agendamento</span>
+                            <span v-else>Novo Agendamento</span>
                         </h3>
                         
                         <form @submit.prevent="saveEvent">
@@ -159,7 +160,8 @@
                                     Cancelar
                                 </button>
                                 <button type="submit" class="primary-button" :disabled="saving">
-                                    {{ saving ? 'Salvando...' : 'Salvar' }}
+                                    <span v-if="saving">Salvando...</span>
+                                    <span v-else>Salvar</span>
                                 </button>
                             </div>
                         </form>

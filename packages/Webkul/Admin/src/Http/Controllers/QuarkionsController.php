@@ -5,7 +5,6 @@ namespace Webkul\Admin\Http\Controllers;
 use App\Services\WhatsAppService;
 use App\Repositories\WhatsappConversationRepository;
 use App\Services\EvolutionSessionService;
-use App\Http\Controllers\AgentesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Agenda;
@@ -19,20 +18,17 @@ class QuarkionsController extends Controller
     protected $googleCalendarService;
     protected $conversationRepository;
     protected $evolutionService;
-    protected $agentesController;
 
     public function __construct(
         WhatsAppService $whatsappService,
         GoogleCalendarSyncService $googleCalendarService,
         WhatsappConversationRepository $conversationRepository,
-        EvolutionSessionService $evolutionService,
-        AgentesController $agentesController
+        EvolutionSessionService $evolutionService
     ) {
         $this->whatsappService = $whatsappService;
         $this->googleCalendarService = $googleCalendarService;
         $this->conversationRepository = $conversationRepository;
         $this->evolutionService = $evolutionService;
-        $this->agentesController = $agentesController;
     }
 
     /**
@@ -310,7 +306,12 @@ class QuarkionsController extends Controller
 
     public function agentesStore(Request $request)
     {
-        return $this->agentesController->store($request);
+        try {
+            $agente = \App\Models\Agentes::create($request->all());
+            return response()->json(['success' => true, 'agente' => $agente]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function agentesDashboard()
@@ -377,9 +378,28 @@ class QuarkionsController extends Controller
             $conversations = $this->conversationRepository->getConversations($filters, $request->get('per_page', 15));
             $stats = $this->conversationRepository->getConversationStats();
 
+            // Transformar dados para formato esperado pelo frontend
+            $transformedData = $conversations->getCollection()->map(function ($conversation) {
+                return [
+                    'id' => $conversation->lead_id,
+                    'name' => $conversation->lead->nome ?? 'Contato',
+                    'phone' => $conversation->lead->telefone ?? '',
+                    'lastMessage' => $conversation->mensagem ?? '',
+                    'updatedAt' => $conversation->last_message_at ?? $conversation->criado_em,
+                    'unread' => 0, // Simplificado pois não temos coluna lida
+                    'status' => $conversation->lead->status ?? 'ativo'
+                ];
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => $conversations,
+                'conversations' => $transformedData,
+                'pagination' => [
+                    'current_page' => $conversations->currentPage(),
+                    'total' => $conversations->total(),
+                    'per_page' => $conversations->perPage(),
+                    'last_page' => $conversations->lastPage()
+                ],
                 'stats' => $stats
             ]);
         } catch (\Exception $e) {

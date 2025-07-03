@@ -8,19 +8,24 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('product_inventories', function (Blueprint $table) {
-            $table->dropForeign(['warehouse_location_id']);
-
-            $table->foreign('warehouse_location_id')->references('id')->on('warehouse_locations')->onDelete('cascade');
-        });
+        // SQLite não suporta alterar foreign keys
+        // Esta migração é apenas para alterar o comportamento onDelete
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('product_inventories', function (Blueprint $table) {
+                $table->dropForeign(['warehouse_location_id']);
+                $table->foreign('warehouse_location_id')->references('id')->on('warehouse_locations')->onDelete('cascade');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('product_inventories', function (Blueprint $table) {
-            $table->dropForeign(['warehouse_location_id']);
-
-            $table->foreign('warehouse_location_id')->references('id')->on('warehouse_locations')->onDelete('set null');
-        });
+        if (config('database.default') !== 'sqlite') {
+            Schema::table('product_inventories', function (Blueprint $table) {
+                $table->dropForeign(['warehouse_location_id']);
+                $table->foreign('warehouse_location_id')->references('id')->on('warehouse_locations')->onDelete('set null');
+            });
+        }
     }
 };
+
