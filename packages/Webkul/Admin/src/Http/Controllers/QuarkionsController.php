@@ -227,6 +227,11 @@ class QuarkionsController extends Controller
         return view('admin::quarkions.whatsapp.basic-inbox');
     }
 
+    public function whatsappWeb()
+    {
+        return view('admin::quarkions.whatsapp.whatsapp-web');
+    }
+
     public function whatsappChat($leadId)
     {
         return view('admin::quarkions.whatsapp.chat', ['leadId' => $leadId]);
