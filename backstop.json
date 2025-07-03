@@ -1,0 +1,95 @@
+{
+  "id": "laravel_crm_visual_regression",
+  "viewports": [
+    {
+      "label": "phone",
+      "width": 375,
+      "height": 667
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "label": "desktop",
+      "width": 1280,
+      "height": 800
+    }
+  ],
+  "onBeforeScript": "puppet/onBefore.js",
+  "onReadyScript": "puppet/onReady.js",
+  "scenarios": [
+    {
+      "label": "WhatsApp Web - Login Page",
+      "cookiePath": "backstop_data/engine_scripts/cookies.json",
+      "url": "http://localhost:8000/admin/login",
+      "referenceUrl": "",
+      "readyEvent": "",
+      "readySelector": "",
+      "delay": 1000,
+      "hideSelectors": [],
+      "removeSelectors": [
+        "[data-testid='debug-bar']",
+        ".phpdebugbar"
+      ],
+      "hoverSelector": "",
+      "clickSelector": "",
+      "postInteractionWait": 0,
+      "selectors": [
+        "document"
+      ],
+      "selectorExpansion": true,
+      "expect": 0,
+      "misMatchThreshold": 0.1,
+      "requireSameDimensions": true
+    },
+    {
+      "label": "Agenda - Calendar View",
+      "cookiePath": "backstop_data/engine_scripts/cookies.json",
+      "url": "http://localhost:8000/admin/quarkions/agenda",
+      "referenceUrl": "",
+      "readyEvent": "",
+      "readySelector": "#calendar",
+      "delay": 3000,
+      "hideSelectors": [
+        "[data-testid='debug-bar']",
+        ".phpdebugbar",
+        ".fc-toolbar-title"
+      ],
+      "removeSelectors": [
+        "[data-testid='debug-bar']",
+        ".phpdebugbar"
+      ],
+      "hoverSelector": "",
+      "clickSelector": "",
+      "postInteractionWait": 1000,
+      "selectors": [
+        "#calendar",
+        ".fc-toolbar",
+        ".fc-daygrid"
+      ],
+      "selectorExpansion": true,
+      "expect": 0,
+      "misMatchThreshold": 0.1,
+      "requireSameDimensions": true
+    }
+  ],
+  "paths": {
+    "bitmaps_reference": "backstop_data/bitmaps_reference",
+    "bitmaps_test": "backstop_data/bitmaps_test",
+    "engine_scripts": "backstop_data/engine_scripts",
+    "html_report": "backstop_data/html_report",
+    "ci_report": "backstop_data/ci_report"
+  },
+  "report": ["browser"],
+  "engine": "puppeteer",
+  "engineOptions": {
+    "args": ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+  },
+  "asyncCaptureLimit": 5,
+  "asyncCompareLimit": 50,
+  "debug": false,
+  "debugWindow": false
+}
+

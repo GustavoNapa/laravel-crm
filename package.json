@@ -3,10 +3,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "visual:init": "backstop init",
+    "visual:ref": "backstop reference",
+    "visual:test": "backstop test",
+    "visual:approve": "backstop approve",
+    "visual:report": "backstop openReport",
+    "visual:clean": "rm -rf backstop_data/bitmaps_test backstop_data/html_report backstop_data/ci_report"
   },
   "devDependencies": {
     "axios": "^1.6.4",
+    "backstopjs": "^6.3.25",
     "laravel-vite-plugin": "^1.0.0",
     "vite": "^5.0.0"
   }

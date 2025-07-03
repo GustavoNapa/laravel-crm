@@ -1,0 +1,216 @@
+name: Visual Regression Tests
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+    paths:
+      - 'packages/Webkul/Admin/src/Resources/views/**'
+      - 'packages/Webkul/Admin/src/Resources/assets/**'
+      - 'resources/views/**'
+      - 'resources/assets/**'
+      - 'public/css/**'
+      - 'public/js/**'
+      - 'backstop.config.js'
+      - '.github/workflows/visual-regression.yml'
+
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update visual baseline (reference images)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: laravel_crm_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Configure database
+        run: |
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=laravel_crm_test" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=password" >> .env
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+
+      - name: Seed database
+        run: php artisan db:seed --force
+
+      - name: Start Laravel server
+        run: |
+          php artisan serve --host=0.0.0.0 --port=8000 &
+          sleep 10
+        env:
+          APP_ENV: testing
+
+      - name: Wait for server to be ready
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:8000/admin/login; do sleep 2; done'
+
+      - name: Download reference images (if exist)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: visual-baseline
+          path: backstop_data/bitmaps_reference/
+
+      - name: Update baseline images
+        if: github.event.inputs.update_baseline == 'true'
+        run: npm run visual:ref
+
+      - name: Run visual regression tests
+        id: visual_tests
+        run: |
+          set +e
+          npm run visual:test
+          TEST_EXIT_CODE=$?
+          echo "test_exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✅ All visual tests passed!"
+            echo "test_result=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Visual regression detected!"
+            echo "test_result=failed" >> $GITHUB_OUTPUT
+          fi
+          
+          exit $TEST_EXIT_CODE
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-test-results-${{ github.run_number }}
+          path: |
+            backstop_data/html_report/
+            backstop_data/ci_report/
+            backstop_data/bitmaps_test/
+          retention-days: 30
+
+      - name: Upload baseline images
+        if: github.event.inputs.update_baseline == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baseline
+          path: backstop_data/bitmaps_reference/
+          retention-days: 90
+
+      - name: Generate test report summary
+        if: always()
+        run: |
+          echo "## 📊 Visual Regression Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.visual_tests.outputs.test_result }}" = "passed" ]; then
+            echo "✅ **All visual tests passed!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No visual regressions detected in the frontend." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Visual regression detected!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Changes detected in the visual appearance of the frontend." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📋 Next Steps:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Download the test results artifact to review differences" >> $GITHUB_STEP_SUMMARY
+            echo "2. Open \`backstop_data/html_report/index.html\` to see detailed comparison" >> $GITHUB_STEP_SUMMARY
+            echo "3. If changes are intentional, update baseline with workflow dispatch" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📁 Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Results**: \`visual-test-results-${{ github.run_number }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **HTML Report**: Available in test results artifact" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testResult = '${{ steps.visual_tests.outputs.test_result }}';
+            const runNumber = '${{ github.run_number }}';
+            
+            let body;
+            if (testResult === 'passed') {
+              body = `## ✅ Visual Regression Tests Passed
+              
+              All visual tests passed successfully! No regressions detected in the frontend.
+              
+              **Test Results**: [Download Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            } else {
+              body = `## ❌ Visual Regression Tests Failed
+              
+              Visual changes detected in the frontend. Please review the differences.
+              
+              ### 📋 Review Steps:
+              1. Download the \`visual-test-results-${runNumber}\` artifact
+              2. Open \`backstop_data/html_report/index.html\` to see detailed comparison
+              3. If changes are intentional, update baseline using workflow dispatch
+              
+              **Test Results**: [Download Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+      - name: Fail job if visual differences detected
+        if: steps.visual_tests.outputs.test_result == 'failed'
+        run: |
+          echo "❌ Visual regression tests failed!"
+          echo "Visual differences detected. Please review the test results."
+          exit 1
+
