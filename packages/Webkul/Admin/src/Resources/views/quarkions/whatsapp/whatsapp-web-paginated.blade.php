@@ -137,6 +137,13 @@
                 chatContactStatus: document.getElementById('chat-contact-status')
             };
 
+            // Verificar se todos os elementos foram encontrados
+            console.log('Elementos DOM encontrados:', elements);
+            const missingElements = Object.entries(elements).filter(([key, element]) => !element);
+            if (missingElements.length > 0) {
+                console.warn('Elementos DOM não encontrados:', missingElements.map(([key]) => key));
+            }
+
             // Carregar conversas com paginação otimizada
             async function loadConversations(page = 1, append = false) {
                 if (state.conversationsPagination.loading) return;
@@ -197,7 +204,9 @@
                         renderConversations(state.conversations, append);
                         
                         // Atualizar contadores
-                        elements.conversationsCount.textContent = state.conversations.length;
+                        if (elements.conversationsCount) {
+                            elements.conversationsCount.textContent = state.conversations.length;
+                        }
                         
                         if (page === 1) {
                             elements.connectionStatus.textContent = `Conectado (${data.pagination.total} total)`;
@@ -464,7 +473,6 @@
                 };
                 loadConversations(1, false);
             }, 500);
-            }
 
             // Selecionar conversa
             function selectConversation(conversationId) {
