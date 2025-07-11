@@ -18,11 +18,11 @@ class WhatsappConversationRepository
             $query->select('id', 'nome', 'telefone', 'status');
         }])
             ->select([
-            'historico_conversas.lead_id',
-            DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
-            DB::raw('COUNT(historico_conversas.id) as message_count'),
-            DB::raw('(SELECT mensagem FROM historico_conversas hc2 WHERE hc2.lead_id = historico_conversas.lead_id ORDER BY hc2.criado_em DESC LIMIT 1) as ultima_mensagem'),
-        ])
+                'historico_conversas.lead_id',
+                DB::raw('MAX(historico_conversas.criado_em) as last_message_at'),
+                DB::raw('COUNT(historico_conversas.id) as message_count'),
+                DB::raw('(SELECT mensagem FROM historico_conversas hc2 WHERE hc2.lead_id = historico_conversas.lead_id ORDER BY hc2.criado_em DESC LIMIT 1) as ultima_mensagem'),
+            ])
             ->join('leads_quarkions', 'historico_conversas.lead_id', '=', 'leads_quarkions.id')
             ->groupBy('historico_conversas.lead_id')
             ->orderBy('last_message_at', 'desc');
